@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="Overdraw - a VST/VST3 Waveshaper with smoothly automatable splines.">
+  <meta name="author" content="Dario Mambro">
+
+  <title>Overdraw - unevens.net</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom fonts for this template -->
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link
+    href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800'
+    rel='stylesheet' type='text/css'>
+  <link
+    href='https://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic,900,900italic'
+    rel='stylesheet' type='text/css'>
+
+  <link href="css/style.min.css" rel="stylesheet">
+
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <!--[if IE]><link rel="shortcut icon" href="img/favicon.ico"/><![endif]-->
+
+  <link href='https://fonts.googleapis.com/css?family=Julius Sans One' rel='stylesheet'>
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+</head>
+
+<body id="page-top">
+
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+    <div class="container">
+      <a class="navbar-brand js-scroll-trigger" href="index.html">unevens</a>
+      <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
+        data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="graphics.html">Graphics</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="audio.html">Audio</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="music.html">Music</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link js-scroll-trigger" href="about.html">About</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header class="audiohead text-center text-white" id="page_head">
+    <div class="container my-auto">
+      <div class="row">
+        <div class="col mx-auto">
+          <br><br><br>
+          <h1>OVERDRAW</h1>
+          <hr>
+          <br>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col mx-auto ">
+          <img src="img/overdraw.jpg" alt="Overdraw GUI" class="gui-preview img-responsive" width=55%>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col mx-auto ">
+          <br><br><br>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section id="products">
+    <div class="container">
+      <div class="row audio-text ">
+        <div class="col col-12 ">
+          Overdraw is a free and open source VST/VST3 audio plug-in that implements a waveshaper in which the user can
+          draw the transfer function of each channel using splines.
+          <br><br>
+          <a class="audio-text-link"
+          href="https://www.youtube.com/watch?v=tAVPVoSiEIM">Here</a> is a brief video with an example of Overdraw and <a class="audio-text-link"
+            href="curvessor.html">Curvessor</a> used together.
+          <!-- <br><br>
+          <div class="embed-responsive embed-responsive-16by9">
+            <iframe class="embed-responsive-item" src="https://www.youtube-nocookie.com/embed/tAVPVoSiEIM" allowfullscreen></iframe>
+          </div> -->
+          <br><br>
+          You can jump to <a class="audio-text-link" href="#Download">the download section</a>, or browse
+          the <a class="audio-text-link" href="https://github.com/unevens/Overdraw">source code</a>.
+          <br><br><br>
+          <h4>Features</h4>
+          <br>
+          <ul style="list-style-type:disc;">
+            <li>The transfer functions are smoothly automatable splines.</li>
+            <li>Optional Mid/Side Stereo processing.</li>
+            <li>All the parameters, including the knots of the spline, can have different values on the Left
+              channel and on the Right channel
+              - or on the Mid channel and on the Side channel, when in Mid/Side Stero Mode.</li>
+            <li>Dry-Wet percentage.</li>
+            <li>Up to 32x Oversampling with either Minimum Phase or Linear Phase Antialiasing.</li>
+            <li>VU meter showing the difference between the input level and the output level.</li>
+            <li>Customizable smoothing time, used to avoid zips when automating the knots of the splines, the wet
+              amount, the smoothing time, or the input and output gains</li>
+          </ul>
+          <br><br>
+          <h4>Spline editing</h4>
+          <br>
+          The splines can be edited either by dragging the knots with the mouse, or by entering numeric
+          values for the selected knot.<br><br>
+          To enable or disable a knot, double click on it.<br><br>
+          When the knots of two different channel are overlapping, the mouse will interact with the control
+          point of the Left/Mid channel.<br>
+          To interact with the knot of the Right/Side channel, use the right button of your mouse, or press the
+          <i>ALT</i> key while clicking.<br><br>
+          To zoom in or out, use the mouse scroll wheel.
+          <br><br><br>
+          <h4>Supported Platforms</h4>
+          <br>
+          Overdraw is developed and tested on Windows and Linux (VST and VST3).<br>
+          If you are willing to build Overdraw from the source code, you may be able to build an AudioUnit/VST/VST3 binary for macOS.<br>
+          If you encounter any issue, please contact me either <a href="mailto:hi@unevens.net"
+            class="audio-text-link">here</a> or on
+          <a class="audio-text-link" href="https://github.com/unevens/Overdraw">GitHub</a>.
+          <br><br><br>
+          <h4>Acknowledgements</h4>
+          <br>
+          Overdraw includes code from these third party libraries:
+          <br><br>
+          <ul>
+            <li>The <a class="audio-text-link" href="https://github.com/WeAreROLI/JUCE">JUCE</a> cross platform C++
+              framework.
+            </li>
+            <li><a class="audio-text-link" href="https://github.com/avaneev/r8brain-free-src">r8brain</a>: an high-quality pro
+              audio sample rate converter / resampler C++ library by Aleksey Vaneev.
+            </li>
+            <li><a class="audio-text-link" href="https://github.com/unevens/hiir">HIIR</a>: an oversampling and Hilbert
+              transform library by <a class="audio-text-link" href="http://ldesoras.free.fr/index.html">Laurent de
+                Soras</a>.
+            </li>
+            <li><a class="audio-text-link" href="https://github.com/vectorclass/version2">vectorclass</a>: a library for
+              using SIMD instructions to improve performance on modern microprocessors by <a class="audio-text-link"
+                href="https://agner.org/">Agner Fog</a>.
+            </li>
+            <li><a class="audio-text-link" href="https://github.com/marton78/pffft">PFFFT</a>: a pretty fast FFT, by
+              Julien Pommier, with updates by Hayati Ayguen and by me.
+            </li>
+            <li><a class="audio-text-link" href="https://www.boost.org">Boost</a>
+            </li>
+          </ul>
+          <br>
+          <img src="img/vst.jpg" alt="vst compatible" width="20%">
+          <br><br>
+          VST is a trademark of Steinberg Media Technologies GmbH, registered in Europe and other countries.
+          <br><br>
+          <br><br>
+          <b> Last release: version 2.1, built on 2021/12/10.</b>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <a name="Download"></a>
+  <section class="bg-dark text-white">
+    <div class="container text-center">
+      <h2 class="mb-4">Download</h2>
+      <div>
+        <br> <br>
+      </div>
+      <div class="row my-4">
+        <div class="col col-xs-6">
+          <a href="bin/Overdraw_win.zip" download>
+            <i class="fa fa-windows fa-3x mb-3 sr-button" ></i>
+          </a>
+        </div>
+        <div class="col col-xs-6">
+          <a href="bin/Overdraw_linux.zip" download>
+            <i class="fa fa-linux fa-3x mb-3 sr-button" ></i>
+          </a>
+        </div>
+        <div class="col col-xs-6">
+          <a href="https://github.com/unevens/Overdraw">
+            <i class="fa fa-code fa-3x mb-3 sr-button"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Foooter -->
+  <section id="audio_contact">
+    <div class="container">
+      <div class="row my-4">
+        <div class="col-lg-8 mx-auto text-center">
+          <hr class="my-4">
+        </div>
+      </div>
+      <div class="row my-4">
+        <div class="col-xs-4 ml-auto mx-auto text-center">
+          <a href="https://www.github.com/unevens" class="text_contact_audio">
+            <i class="fa fa-github fa-3x mb-3 sr-contact-1 icon_dark"></i>
+            <p>GitHub</p>
+          </a>
+        </div>
+        <div class="col-xs-4 ml-auto mx-auto text-center">
+          <a href="https://www.linkedin.com/in/dario-m89/" class="text_contact_audio">
+            <i class="fa fa-linkedin fa-3x mb-3 sr-contact-2 icon_dark"></i>
+            <p>LinkedIn</p>
+          </a>
+        </div>
+        <div class="col-xs-4 ml-auto mx-auto text-center">
+          <a href="mailto:hi@unevens.net" class="text_contact_audio">
+            <i class="fa fa-envelope fa-3x mb-3 sr-contact-3 icon_dark"></i>
+            <p>E-Mail</p>
+          </a>
+        </div>
+      </div>
+      <div class="row my-4">
+        <div class="col-lg-8 mx-auto text-center">
+          <hr class="my-4">
+        </div>
+      </div>
+      <div class="row my-4">
+        <div class="col-lg-8 mx-auto text-center">
+          <hr class="my-4">
+        </div>
+      </div>
+      <div class="row my-4">
+        <div class="col-lg-8 mx-auto text-center text_cpy_audio">
+          Copyright &copy; Dario Mambro 2019-2024
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Footer -->
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Plugin JavaScript -->
+  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+  <script src="vendor/scrollreveal/scrollreveal.min.js"></script>
+  <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
+
+  <!-- Page JavaScript -->
+  <script src="js/twgl.min.js"></script>
+  <script src="js/audio.min.js"></script>
+
+</body>
+
+</html>

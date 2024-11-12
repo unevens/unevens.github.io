@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>MasqueradeRoller</title>
+    <style>
+        body {
+            background-color: #000000;
+            color: red;
+            font-family: Bookman, URW Bookman L, serif;
+            font-size: 16px;
+        }
+
+        h2 {
+            font-style: italic;
+            font-family: Bookman, URW Bookman L, serif;
+        }
+
+        button {
+            font-family: Bookman, URW Bookman L, serif;
+            font-size: 20px;
+            width: 120px;
+            height: 60px;
+        }
+    
+
+    </style>
+</head>
+
+<body>
+    <h2 id="truth">The moon is a mysterious mistress, who walks the night with demons of dread.</h2>
+    <div id="settings">
+        <div>
+            <label for="shade">Shade of Darkness</label>
+            <input name="shade" id="shade" type="color" value="#000000" />
+        </div>
+        <div>
+            <label for="textshade">Shade of Light</label>
+            <input name="textshade" id="textshade" type="color" value="#FFFFFF" />
+        </div>
+        <div>
+            <label for="sum">Number of dice to roll</label>
+            <input type="number" id="sum" name="sum" min="1">
+        </div>
+        <div>
+            <label for="diff">Difficulty</label>
+            <input type="number" id="diff" name="diff" min="2" max="10">
+        </div>
+        <div>
+            <label>Reroll 10s<input type="checkbox" id="reroll">
+                <span class="slider"></span> </label>
+        </div>
+        <div>
+            <button type="button" id="roller">Roll!</button>
+        </div>
+    </div>
+
+    <div id="result-div">
+        <p id="result"></p>
+    </div>
+
+    <script>
+
+
+        const rnd = (top = 10) => 1 + Math.floor(Math.random() * top);
+
+        const roll = (sum, reroll) => {
+            const vs = [];
+            for (let i = 0; i < sum; ++i) {
+                let v = rnd();
+                vs.push(v);
+                if (reroll) {
+                    while (v == 10) {
+                        v = rnd();
+                        vs.push(v);
+                    }
+                }
+            }
+            return vs;
+        };
+
+        const rollAndCount = (sum, diff, reroll) => {
+            const res = roll(sum, reroll);
+            let ones = 0;
+            let over = 0;
+            for (const d of res) {
+                if (d == 1) ++ones;
+                else if (d >= diff) ++over;
+            }
+            return { success: over - ones, results: res };
+        }
+
+        const truths = ["Each minor problem like a grain of sand, each night I inherit the desert.",
+            "Into the Chasm [6]: Pass through the Abyss to travel anywhere",
+            "Evocation of the Oubliette [7]: Snatch a target into an abyssal prison for a number of days ",
+            "Cry That Slays Light [8]: Learn a syllable that blots out the sun for one hour",
+            "Aire of Elation: Make everything you do seem so hilarious it incapacitates people",
+            "Capture Reality: Project the essence of a scene through photographs or film",
+            "Force of Personality: People are forced away from you by your aura",
+            "Intensification : Create an object that instills a particular emotion in those who view it",
+            "Love : Make someone enamored with you as if in a blood bond",
+            "Melusine's Song: Command someone through song",
+            "Paralyzing Glance: Send someone into a seizure of terror",
+            "Passion: Fill a person or group with lust, greed, anger, or fear",
+            "Renew the Earthly Pleasures: Overwhelm a vampire with mortal feelings",
+            "Siren's Song: Instill particular emotions in a group through music",
+            "Spark of Rage: Provoke a group of people to Frenzy",
+            "Star Magnetism: Make those who see you in pictures or films in awe of you",
+            "Two-Tiered Communication: Subliminally say different things to someone than what is heard publically",
+            "Vengeance of the Martyr's Legacy: Compel all the vampire's descendants Frenzy ",
+            "Fires of Conviction: Embolden a crowd to riot in the name of some cause",
+            "Mask Empathy: Cut emotional bonds between people",
+            "Mind Numb: Drain the people around you of motivation or incentive to act",
+            "Phobia: Make someone irrationally afraid of something",
+            "Scourging the Instinct: Whip a crowd into a controlled frenzy",
+            "Unholy Penance: Fill someone with guilt and the desire to beg forgiveness",
+            "Vengeance of the Martyr's Legacy: Force all the vampire's descendants to Frenzy ",
+            "Bloodlust: Rouse your troops into an enraged horde capable of ignoring their wounds",
+            "Corruption: Make someone addicted to sadistic acts or go into a Frenzy when presented with pleasurable things",
+            "Invoke Frenzy: Send someone into one of three types of Frenzy",
+            "Ironclad Command: It becomes very difficult to resist your Presence powers",
+            "Perfect Paragon: Appear as the ideal person to whomever sees you ",
+            "A Perfect World: Make everyone in a city work towards making it your ideal city",
+            "Pulse of the City: Project an emotion into the residents of a city ",
+            "Dream World: Project dreams and nightmares to everyone in the world",
+            "Flawless Parry: Make perfect defensive motions at the expense of taking no other action",
+            "Precision: Enter a trance where you can operate with exceptionally fine manipulation",
+            "Projectile: Throw objects with the speed of your Celerity",
+            "Tireless Tread: Run at 50 miles per hour for at least eight hours",
+            "Quickness: Expend a blood and gain yet another additional turn. All previous celerity levels are activated",
+            "Momentum: Focus your Celerity into one instant, increasing your strength ",
+            "Celerity Refinement: Choose to spend vitae for Celerity as you need them, rather than declaring them beforehand",
+            "Flower of Death: Use your Celerity to gain bonuses to attacking",
+            "Quickness: Expend extra blood points to gain extra actions, at the cost of an unsoakable lethal damage level per action",
+            "Stutter-Step: Use your Celerity to gain bonuses to defense ",
+            "Physical Defiance: Move so fast you defy gravity and kill mortals instantly as you pass through them",
+            "The Unseen Storm: Move so fast you are truly invisible",
+            "Time out of Time: React instantly to anything and move before anyone realizes what you have done",
+            "Zephyr: Move so fast that you seem to defy gravity ",
+            "Paragon of Motion: Perform most physical acts without fail",
+            "Between the Ticks: Expend a blood and a Willpower, you gain an automatic success on all attacks delivered to an opponent with less than advanced Celerity. You have an extra action against those with advanced Celerity. All attacks delivered by those with less than advanced Celerity are considered to be automatic failures. You can declare fair escape at any time ",
+            "Blithe Acceptance: People nearby will ignore you no matter what you do so long as you do not become violent",
+            "Busy Doing Nothing: Makes you appear to be doing nothing",
+            "Conceal: Hide an object independent of you up to the size of a house",
+            "Confusion of the Eye: Make a target mentally view someone else differently as with Mask of a Thousand Faces without making any visible signs to others",
+            "Diastatsis: Lets the user fade away and replace themselves with an illusionary self they can control",
+            "Displacement: Appear to be shifted a little to one side",
+            "Gemini's Mirror: Move around invisible while an image of you continues to act normally",
+            "Invisible Weapon: Hide a weapon so that it cannot be seen even when you are attacking with it",
+            "Manifold Guise: Make everyone in an area look like someone else as with Mask of a Thousand Faces, whether they want to or not",
+            "Mask of Janus: Exchange your appearance as with Mask of a Thousand Faces with someone else",
+            "Mental Maze: Make someone unable to find their way out of an area",
+            "Mind Blank: Protect your mind from attempts to read it",
+            "Scrawl: Hide messages in writing legible only to an intended viewer",
+            "Soul Mask: Disguise your aura to appear differently or not at all ",
+            "Cache: Extend an Obfuscate power so that it continues after you have left the area",
+            "Cloak: Hide yourself from Auspex powers searching for you",
+            "Fortress of Silence: Cut any noises off, allowing clarity of thought and heightened awareness of self, or use on a target to drive it mad with the sound of its own heartbeat",
+            "Veil of Blissful Ignorance: Make it so no one will see a person no matter what he does",
+            "Veil the Legions: Hide a small army from a distance",
+            "Visit Faerieland: Step into the Dream ",
+            "Horrid Countenance: Take on the appearance of a monstrous entity that every person sees as their personal nightmare",
+            "Old Friend: Make someone view you as a trusted friend and confidant",
+            "Phantom Haunter: Take on the visage of a figure that haunts and terrifies the target ",
+            "Create Name: Create a whole new identity for yourself that overcomes any suspicions",
+            "Obscure God's Creation: Remove a person or object from another's perceptions ",
+            "Memories Fading Glimpse: Remove your existence from reality ",
+            "Animal Succulence: Gain more vitae from animal blood",
+            "Beast Walk: Hop from animal body to animal body",
+            "Deep Song: Influence the emotional state of listeners with a song",
+            "Eye of the Szlachta: Possess the body of a ghoul",
+            "Gap of Ages: As Feral Whispers, except give commands to an animal and all of its descendents",
+            "Pact with Animals: Gain beastial qualities from the blood of an animal",
+            "Quell the Herd: As Quell the Beast but on groups of mortals or animals",
+            "Sense the Savage Way: Share the senses of an animal",
+            "Shared Soul: Meld minds with an animal and probe their memories",
+            "Shepherd's Innocence: Gain the trust and attention of all animals",
+            "Song in the Dark: Summon huge worms from the deep earth to shift the earth, creating caverns or earthquakes",
+            "Species Speech: As Feral Whispers, except speak with all animals of a species present",
+            "Tainted Oasis: Taint a land so that animals that feed from it become stronger and loyal",
+            "Tier of Souls: Gain memories or powers from the blood you drink ",
+            "Conquer the Beast: Enter and leave your Frenzy at will",
+            "Master's Voice: As Species Speech, except speak to all animals regardless of species",
+            "Send the Eighth Plague: Summon beasts to devastate the harvests of a land",
+            "Stampede: Induce animalistic panic in a group of mortals",
+            "Twist the Feral Will: Force an animal to obey you without speaking or remaining near it",
+            "Beast Shard: Split up your Beast and instill shards in others, making them more prone to Frenzy and making they more susceptible to your Disciplines ",
+            "Crimson Fury: Your blood causes Frenzy in any who taste it and diablerists must fight off your Beast",
+            "Mass Summons: Summon all animals within miles of you",
+            "Taunt the Caged Beast: Cause other vampires to Frenzy",
+            "Twin Spirits: Possess an animal's body without losing control of your own",
+            "Unchain the Ferocious Beast: Cause a target's Beast to tear at them from within ",
+            "Eyes of the Forest: Meld to the earth and use the animals in the forest as eyes.",
+            "Flesh Bond: Physically meld with one or more animals",
+            "Free the Beast Within: Enter a controlled Frenzy and gain several powers from the Beast",
+            "Unchain the Beast: Cause a target's Beast to tear at them from within ",
+            "Army of Beasts: Control all animals within a mile ",
+            "Adaptability: Attune oneself to survive in extreme environments",
+            "Adaptation: Adapt oneself to avoid harm from the vampire's environment",
+            "Blissful Slumber: Hibernate during the day as nearly indestructible mist",
+            "Earth Control: Travel beneath the earth",
+            "Flesh of Marble: Damage from physical attacks is halved",
+            "Loki's Gift: Change into the shape of a creature whose blood you have tasted",
+            "Shape Mastery: Cause shapeshifters to revert to their natural form",
+            "Smoke and Mirrors: When attacked, turn into mist instantly ",
+            "Animal Swarm: Transform into a swarm of small creatures",
+            "Death's Hidden Crawl: Slowly move while in torpor",
+            "Homunculus: Create a miniature version of yourself to act as a servant",
+            "Restore the Mortal Visage: Temporarily appear as one did while mortal",
+            "Shape of the Beast's Wrath: Transform into a powerful man-beast abomination",
+            "Spectral Body: Become incorporeal while retaining one's forms and nonphysical abilities",
+            "Turnabout: Quickly change positions by moving through the earth ",
+            "Movement of the Slowed Body: Very slowly move while in torpor",
+            "Mythic Form: Transform into a specific mythic creature",
+            "Purify the Impaled Breast: Violently expel foreign objects from your body, including stakes",
+            "Shape of the Inner Beast: Enter Frenzy and transform into a monstrous killing machine ",
+            "Adaptation: Your body instinctively shifts to provide maximum protection",
+            "Draught of Phoenix Blood: A number of days equal to the vampire's generation after Final Death, they will reincarnate in a new body, one generation higher, retaining this power but with an incomplete picture of who they were and losing any other Attributes, Abilities, Backgrounds, and Disciplines above the new generational trait cap.",
+            "Dual Form: Split into two weaker versions of oneself ",
+            "Inward Focus: Drastically improve one's combat abilities ",
+            "Body of the Sun: Transform your body into blazing indestructible fire ",
+            "Aspect of the God: Assume one of Set's visages",
+            "Breathe the Sandstorm: Exhale a scorching blast of sand",
+            "Breath of the Basilisk: Exhale a poisoning and corrosive mist",
+            "Cobra Fangs: Grow the venomous fangs of the cobra without having to transform",
+            "Obsession: Fill someone with lust for an object or condition",
+            "Ophidian Infestation: Consume someone from the inside by snakes",
+            "Temptation: Tempt someone into committing evil actions",
+            "Typhonic Beast: Transform into the Typhonic Animal (also possible as a Combination Discipline) ",
+            "Divine Image: Take on the physical and mental strengths of a deity",
+            "Phobia: Make someone irrationally afraid of something",
+            "Seed of Corruption: Slowly erode someone's morals and raise suppressed desires to the surface",
+            "Set's Curse: Transform someone's body and mind into a snake that acts as your servant",
+            "Form of the Storm: Transform your body into wind and clouds, battering your surroundings ",
+            "Apep's Semblance: Transform into a large snake-human hybrid",
+            "Body of the Great Lord Set: Take on a form and powers comparable to Set's",
+            "Corruption: Make someone addicted to sadistic acts",
+            "Heart Thief: Rip another vampire's heart from their body",
+            "Cerberus's Fury: Grow two additional heads that can see wraiths ",
+            "Form of Corruption: Create an object that makes people addicted to sadistic acts",
+            "Pact with Ra: Walk in the sun without harm for one day",
+            "Shadow of Apep: Become a nearly indestructible giant snake of pure darkness",
+            "Godhead: Assume a form comparable to one of the divine forms of the Aeons ",
+            "Mark of Damnation: Make someone so hideous they will be attacked by anyone who sees them ",
+            "Autonomic Mastery: Start, stop, or otherwise control a target's bodily functions",
+            "Chain the Psyche: Attempting to circumvent your Dominate commands fills the target with incapacitating pain",
+            "Command Obedience: You no longer require eye contact for Dominate, relying on skin contact or your voice",
+            "Fealty: Enforce oaths a target makes to you so they cannot be broken",
+            "Implanted Opinion: Implant a feeling, opinion, or even a personality trait the victim will believe is their own",
+            "Loyalty: It becomes very difficult for other vampires to override your Dominate commands with their own",
+            "Memory Block: Leave a target unable to talk about a memory even while able to remember it",
+            "Obedience: The vampire may use any Dominate power without eye contact. Touching their skin, or even clothing, is sufficient.",
+            "Oberon's Grail: Erase entire nights of a target's memory",
+            "Rationalize: Those you Dominate refuse to believe their actions are not their own",
+            "Tranquility: Ease a vampire out of Frenzy ",
+            "Chain of Command: Should a target be made unable to obey one of your Dominate command the effect will be passed to one who can",
+            "Dynastic Power: Control mortal descendants and implant suggestions using just a name or picture of the target",
+            "Repression of the Obvious: Learn a thought the target is repressing and make them blurt it out",
+            "Mass Manipulation: You can use Dominate on small groups at once",
+            "Still the Mortal Flesh: Shut down the body functions of a target",
+            "Strings of the Marionette: Force a vampire to obey your commands even when staked or in torpor",
+            "Tyrant's Gaze: Reduce the Attributes of a target with a look ",
+            "Carry the Master's Voice: Make it so you can issue Dominate commands through a thrall",
+            "Far Mastery: You can issue Dominate commands to someone you know anywhere in the world if you know their location ",
+            "Best Intentions: Make a target always act with your best intentions in mind",
+            "Speak Through the Blood: Guide the actions of your vampiric descendents over the years ",
+            "Puppet Master: Override a target's mind completely and make them think and act as you. This power may only be attempted once per year on a given victim. ",
+            "Celestial Harmony: Open your mind to the thoughts and emotions of a crowd",
+            "Cipher: Gain the ability to read any non-supernatural language or code",
+            "Clairvoyance: See what is happening in a distant location",
+            "Crocodile's Tongue: Know what someone wants to hear in order to get the best reaction",
+            "Discern the Aura: Scan a group of people with one particular trait in their aura",
+            "Eagle's Sight: Gain a bird's eye view of your area",
+            "Genius Loci: Gain insight by meditating at places of high resonance",
+            "Horoscopic Forecast: Gain a glimpse of the target's future",
+            "Insight of the Talespinner: Draw out detailed characters and stories quickly from your mind",
+            "Prediction: Socially outwit someone by knowing what they are going to say ahead of time",
+            "Sense Emotion: Learn the emotions of the people around you",
+            "Spirit Bond: Create a connection to something so you can find its geographical location",
+            "Telepathic Communication: Mentally speak with someone, even if they are a great distance away",
+            "The Dreaming: Be somewhat aware of events concerning you while in torpor",
+            "The Mind Revealed: Continuously read someone's thoughts to know what they are thinking and about to do ",
+            "Anima Gathering: Take other people with you to travel astrally",
+            "Ecstatic Agony: The pain from wounds makes you act stronger, not weaker",
+            "Karmic Sight: View someone's aura, personality, morality, and other karmic qualities",
+            "Melange: See the truths behind reality in metaphor",
+            "Mirror Reflex: React quickly to an opponent in combat by reading their mind",
+            "Personality Metamorph: Take on fictitious personalities as your own",
+            "Pluck the Secret: Learn what a target knows about a specific subject",
+            "Spirit Link: Speak with multiple people telepathically at once",
+            "Stealing the Mind's Eye: See and hear what a target does and even use some Disciplines through them",
+            "Supernal Awareness: Sense events and deeds anywhere in the world ",
+            "Omniscience: Learn the personalities and identities of all creatures around you",
+            "Psychic Assault: Make a powerful mental attack against a target's psyche",
+            "The Oracle's Sight: Hear and see the thoughts of everyone around you",
+            "The Call: a Malkavian-exclusive ability that enables the vampire to summon a clan gathering. ",
+            "False Slumber: Astrally project while in torpor",
+            "Master of the Dom: Merge with a land and know everything that transpires on it while gaining power over the land and its residents",
+            "Precognition: Gain some insight as to what may happen at a particular time and place",
+            "Sight of the Oracle: Always know what is happening around you, gain visions of past and future events, and increase other supernatural senses ",
+            "Pulse of the Canaille: Sense the attitudes, directions, and trends of groups of mortals, as well as those who may be controlling them ",
+            "Babble: Communicate over a great distance via the Madness Network",
+            "Devil in the Mind: Remove all inhibitions and social morals while bringing impulses to the surface",
+            "Enigmatic Text: Hide information in speech, writing, art, music, flower arrangements, even trash on the floor, anything the hand or mind could shape.",
+            "Kiss of the Moon: Inflict two related permanent derangements upon a victim",
+            "Lingering Malaise: Inflict a permanent derangement upon a victim",
+            "Shattered Mirror: Twist a victim's personality into a copy of your own",
+            "The Call: Summon others within the Madness Network to meet",
+            "Stain the Soul: Inflict a permanent derangement upon a victim ",
+            "Childmind: Give someone a psychic lobotomy, reducing their Mental attributes by up to seven points",
+            "Delayed Delirium: As Kiss of the Moon, but it can be made to activate later",
+            "Mind of a Killer: Temporarily make someone a cold-blooded killer until they take it out on someone",
+            "Restructure: Change a person's Nature",
+            "Sleep of Reason: Create physical manifestations of the hobgoblins in a victim's mind",
+            "Wave of Insanity: As Total Insanity, except affect multiple targets",
+            "The Sword of Malkav: Change a fundamental truth of a target with an idea of your own and make them unable to fathom that the new truth could be false",
+            "Cobble the Road: Change the virtues of someone, possibly driving them from their adopted morality ",
+            "Coma: Place someone into a catatonic state for an extended period of time",
+            "Deny: Ignore the existence of an object and not be affected by it",
+            "Minds of the Children: As Childmind, except affect multiple targets",
+            "Personal Scourge: Turn a target's Willpower rating against them as continuous damage",
+            "Prison of the Mind: Lock someone's mind in a delusional state and leave his body catatonic ",
+            "Blessing of Chaos: Suffer additional madness, but become immune to Chimerstry, Dementation, Dominate, and Presence",
+            "Lunatic Eruption: Invoke a mad frenzy in all sentient creatures within up to several miles",
+            "Mass Coma: As Coma, except affect multiple targets",
+            "Touch of the Saints: Cure an individual of derangements and anything affecting their mind ",
+            "Army of Apparitions: Create multiple moving illusions",
+            "False Resonance: Disguise one's thoughts and aura from other attempts to read them",
+            "Fata Amria: Curse a target with a recurring illusion that interferes with them",
+            "Fatuus Mastery: No longer spend Willpower or blood points for the first three levels of Chimerstry, require less concentration to maintain illusions",
+            "Horrid Blade of the Demons: Create a dangerous weapon out of nothing",
+            "Subtle Spy: Impart a piece of the vampire's consciousness into a illusion which can be absorbed later to learn all the illusion witnessed",
+            "Shared Nightmare/Mass Horror: As Horrid Reality, except it affects multiple people",
+            "Truth's Essence: Reveal as falsehoods other uses of Chimerstry or Obfuscate ",
+            "Aid of the Gandharvas: Make everything in a room seem luxurious and splendid",
+            "Far Fatuus: Create illusions anywhere you can visualize",
+            "Mirror's Visage: Create duplicates of oneself",
+            "Suspension of Disbelief: Make an illusion seem completely real or what is real seem unbelievable ",
+            "Fantasy World: Place a target in an illusionary world in their mind",
+            "Occlusion: Control how a single target's or group's senses work",
+            "Pseudo Blindness: See through almost all falsehoods",
+            "Sensory Overload: Incapacitate a target by overstimulating their senses",
+            "Visions from the Asura: Assault a target with constant illusions, making it nearly impossible to know what is real or not ",
+            "Mayaparisatya: Temporarily make an illusion completely real or alter a person or object that already exists, possibly even erasing them from existence",
+            "Sensory Deprivation: Make a victim unable to use any of their senses, locking them out from the world",
+            "Truths of the Universe: Make a created illusion permanently real ",
+            "Reality: Trap a victim in an alternate reality of your creation ",
+            "Personal Armor: Weapons that hit you may break",
+            "Sensory Shield: Protect your mind from sensory overload and suffer less wound penalties",
+            "Stand Against All Foes: Cannot be moved from your spot by any force",
+            "Alabastard: Ignore damage penalties ",
+            "Armor of Kings: Weapons that hit you may break, doing no damage",
+            "Curse the Laurel: Slowly move stakes from your heart",
+            "Resilient Mind: Your mind sheds derangements and animalistic quirks while becoming resistant to mind-altering powers",
+            "Shared Strength: Grant your supernatural resilience to another ",
+            "Adamantine: Weapons that hit you may break, doing no damage",
+            "Eternal Vigilance: Remain awake during the day almost at full strength",
+            "King of the Mountain: Take no actions but fully blocking attacks, breaking weapons that you stop",
+            "Repair the Undead Flesh: Heal aggravated damage without need of rest",
+            "Armored Flesh: Suffer no damage outside of combat, and block attacks with your bare hands. ",
+            "Arm of Prometheus: Make one of your limbs completely indestructible for 10 minutes ",
+            "Imprint: The Kindred squeezes so hard they leave imprints in solid steel.",
+            "Master of the Forge: The Kindred creates exceptional metalwork tools and weapons.",
+            "Relentless Pursuit: The Kindred makes extraordinary leaps through the air.",
+            "The Fist of Caine: The Kindred makes brawling attacks from a few yards away.",
+            "The Gentle Rebuke: The Kindred telekinetically knocks someone away without harming them.",
+            "Crush: The Kindred with a successful attack against an object automatically destroys it. ",
+            "Earthshock: The Kindred sends shockwaves through the Earth.",
+            "Fist of the Titans: The Kindred attacks or throws someone away telekinetically.",
+            "Immovable Object: Spend a Willpower point while standing on a solid surface to become absolutely immovable.",
+            "The Forger's Hammer: The Kindred creates weapons that do extra damage.",
+            "Brutality: The Kindred is able to deal lethal damage with their unarmed strikes. ",
+            "Aftershock: Delay damage from attacks for up to 24 hours.",
+            "Flick: The Kindred makes a simple motion that sends a target flying away.",
+            "Lend the Supernatural Vigor: The Kindred grants their incredible strength to another.",
+            "Touch of Pain: The Kindred puts the full force of their strength against one person or object. ",
+            "Might of the Heroes: The Kindred performs physical feats of mythic proportion. ",
+            "Body Arsenal: Transform the bones in your body into weapons",
+            "Blood of Acid: Permanently make your vitae highly corrosive",
+            "Chiropteran Marauder: Transform into a huge, flying bat",
+            "Ecstatic Agony: Change the pain of wounds into pleasure",
+            "Entrail Saraband: Turn your bowels into writhing tendrils",
+            "Graft Life to Life: Attach the limbs of one person to another without it becoming useless",
+            "Living Testudo: Use a victim as a living weapon and shield",
+            "Plasmic Form: As Bloodform, except you can move and hold any shape as a pool",
+            "Skin Trap: Peel off a layer of skin to use as a net ",
+            "Cocoon: Wrap yourself into an incredibly resilient shell",
+            "Flesh Rot: Give a target a disease that eats away at their body",
+            "Impaler's Fence: Cause a victim's spine to shoot up and down them",
+            "Kraken's Kiss: Transform your face into a tentacle that can drain blood",
+            "Transcend the Flesh: Expel foreign substances from your body or move through solid objects",
+            "Liquefy the Mortal Coil: Turn victim body parts into blood. ",
+            "Bauble: Transform into an object no smaller than half your size",
+            "Breath of the Dragon: Exhale a blast of flame",
+            "Will over Form: Use Vicissitude without one's hands over a distance",
+            "Sublimation of the Larval Flesh: Weave the flesh of target into a cocoon to transform it into a new form",
+            "Oathbreaker: Transform your blood into a substance that can suborn foreign Blood Bonds for a limited period of time",
+            "Blood of the Earth: Your Blood becomes a viscous substance that burns when it is exposed to air. ",
+            "Doppelgänger: Assume any shape",
+            "Earth's Vast Haven: Dissolve your body into the earth",
+            "Perfect Essence: Control your vitae more efficiently",
+            "The Last Dracul: Assume a draconic form whose blood incinerates when it is in contact with air ",
+            "Reform Body: Recreate your body after dying ",
+            "Concordance: Gain a permanent physical feature of your dark masters",
+            "Diabolic Lure: Permanently lower a victim's Road rating",
+            "Glimpse the Gulf Beyond: Open a rift to the Beyond that mentally overwhelms a target",
+            "Ignore the Searing Flames: Suffer no harm from fire ",
+            "Bring the Plague: Spreads a deadly plague that affect both Mortals and Cainites alike.",
+            "Infernal Servitor: Summon a demon to serve you",
+            "Summon the Herald of Topheth: Create a rift to the Beyond through which something might enter the world",
+            "The Re-Embrace: Transform a vampire into a Baali ",
+            "Contagion: Soak an entire area in evil, causing violence and hatred to erupt",
+            "Unleash Hell's Fury: Cause a Cainite to feel the sun's light no matter what shelter they have",
+            "Open the Way: Sacrifice oneself that one of the Elder Gods might enter the world ",
+        ];
+
+        let t = 0;
+        const rollAndReport = () => {
+            const truth = document.getElementById("truth");
+
+            truth.innerHTML = truths[rnd(truths.length - 1)];
+
+            const sum = document.getElementById("sum").value;
+            const diff = document.getElementById("diff").value;
+            const reroll = document.getElementById("reroll").checked;
+            const rollInfo = `rolled ${sum} dice with difficulty ${diff}${reroll ? ", rerolling 10s" : ""}`;
+            console.log(rollInfo);
+            const { success, results } = rollAndCount(sum, diff, reroll);
+
+            const result = (() => {
+                if (success > 0) {
+                    return `SUCCESS! Number of sucesses: ${success}  -  ${rollInfo}`;
+                } else if (success < 0) {
+                    return `CRITICAL FAILURE! Number of ones: ${success}  -  ${rollInfo}`;
+                } else {
+                    return `FAILURE!  -  ${rollInfo}`;
+                }
+            })();
+            const dices = results.sort((a, b) => a < b);
+            console.log(result);
+            document.getElementById("result").innerHTML = result + "<br>" + dices.toString() + "<br><br>" + document.getElementById("result").innerHTML;
+        }
+
+        const roller =
+            document.getElementById("roller");
+
+        roller.onclick = rollAndReport;
+
+        document.getElementById("sum").value = 6;
+        document.getElementById("diff").value = 6;
+        document.getElementById("reroll").value = false;
+
+        const shader =
+            document.getElementById("shade");
+
+        shader.onchange = () => {
+            document.body.style.backgroundColor = shader.value;
+        };
+
+        const textShader =
+            document.getElementById("textshade");
+
+        textShader.onchange = () => {
+            document.body.style.color = textShader.value;
+        };
+
+        document.onkeyup = (e) => {
+            if (e.key == "Enter") {
+                rollAndReport();
+            }
+        }
+
+
+    </script>
+
+</body>
+
+</html>

@@ -100,15 +100,18 @@ canvas.addEventListener("touchmove", handleTouch);
 const shaders = [];
 
 class Shader {
-  constructor(name) {
+  constructor(name, code = "") {
     this.name = name;
-    this.code = "";
+    this.code = code;
     shaders.push(this);
   }
   url() {
     return "shaders/" + this.name + ".glsl";
   }
   load() {
+    if (this.code.length > 0) {
+      return this.code;
+    }
     return getText(this.url()).then(
       (text) => {
         this.code = text;
@@ -226,6 +229,8 @@ function start(onStart, onNewFrame) {
 function texImage2D(options, textureData) {
   textureData = textureData || null;
   const hasAlpha = options.hasAlpha || true;
+  const flipY = options.flipY || false;
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, flipY);
   if (options.bits == 16) {
     gl.texImage2D(
       gl.TEXTURE_2D,
@@ -477,7 +482,7 @@ class Bloom {
     let numDiscTaps = 1 + Math.round(minRes * this.radius);
     numDiscTaps = Math.min(this.maxTaps, Math.max(2, numDiscTaps));
     if (numDiscTaps % 2 == 0) numDiscTaps += 1;
-    console.log("num disc taps", numDiscTaps);
+    // console.log("num disc taps", numDiscTaps);
     const weight = new Array(numDiscTaps);
     const offset = new Array(numDiscTaps);
     for (let i = 0; i < numDiscTaps; i++) {
@@ -489,12 +494,12 @@ class Bloom {
     for (let i = -numDiscTaps + 1; i < numDiscTaps; i++) {
       const n = i + Math.floor(N / 2);
       const x = binomialCoefficient(N, n);
-      console.log(N, n, x);
+      // console.log(N, n, x);
     }
 
     for (let i = 0; i < numDiscTaps; i++) {
       weight[i] = binomialCoefficient(N, i + N / 2);
-      console.log(weight[i]);
+      // console.log(weight[i]);
       nrmCoef += weight[i];
       if (i > 0) {
         nrmCoef += weight[i];
@@ -505,7 +510,7 @@ class Bloom {
       weight[i] *= nrmCoef;
     }
     let numLinTaps = (numDiscTaps - 1) / 2 + 1;
-    console.log("num lin taps", numLinTaps);
+    // console.log("num lin taps", numLinTaps);
 
     if (this.weight.length != numLinTaps) {
       this.weight = new Float32Array(numLinTaps);
@@ -520,9 +525,9 @@ class Bloom {
       this.offset[i] = weight[2 * i - 1] * offset[2 * i - 1] + weight[2 * i] * offset[2 * i];
       this.offset[i] /= this.weight[i];
     }
-    console.log(this.weight);
-    console.log(this.offset);
-    console.log(offset);
+    // console.log(this.weight);
+    // console.log(this.offset);
+    // console.log(offset);
   }
 
   apply(srcTexture) {
@@ -595,7 +600,7 @@ class Bloom {
   }
 
   getResult() {
-    return this.buffers[0].textcures[0];
+    return this.buffers[0].textures[0];
   }
 }
 
@@ -618,5 +623,6 @@ export {
   setCanvasViewport,
   Program,
   Bloom,
-  updateMouseOnlyOnClick
+  updateMouseOnlyOnClick,
+  texImage2D
 };

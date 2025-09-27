@@ -42,7 +42,6 @@ class Smaa {
         this.options = options;
 
         const edge_channel = options.edge_channel || "luma";
-        console.log(edge_channel);
         const preset = options.preset || "medium";
         const edge_threshold = options.edge_threshold || 0.1;
         const local_contrast_adpatation_factor = options.local_contrast_adpatation_factor || 2.0;
@@ -50,10 +49,6 @@ class Smaa {
 
         const edgeMacro = SmaaEdgeDetection[edge_channel] || SmaaEdgeDetection["luma"];
         const presetMacro = SmaaQualityPresets[preset] || SmaaQualityPresets["medium"];
-        console.log(edgeMacro);
-        console.log(SmaaEdgeDetection);
-        console.log(SmaaEdgeDetection.has(edge_channel));
-        console.log(SmaaEdgeDetection[edge_channel]);
 
         const edge_vs_code = `#define ${edgeMacro} 
 #define ${presetMacro}
@@ -80,7 +75,6 @@ ${smaa.SMAA_WEIGHTS_FRAG}`;
         const weight_fs = new fxs.Shader("smaa_weight_fs", weight_fs_code);
 
         this.weightProgram = new fxs.Program(weight_vs, weight_fs);
-        // console.log(weight_fs_code);
 
         const blend_vs_code = `#define ${presetMacro}
 ${smaa.PRESETS}

@@ -16,7 +16,12 @@ layout(location = 0) out vec4 outputColor;
 uniform float time;
 uniform float hueVariation;
 uniform float hueSpeed;
-uniform vec3 minColorHsv;
+uniform float tint;
+uniform float tintVariation;
+uniform float saturation;
+uniform float saturationVariation;
+uniform float lightness;
+uniform float lightnessVariation;
 uniform vec3 maxColorHsv;
 uniform float blinkSpeedMin;
 uniform float blinkSpeedMax;
@@ -84,13 +89,11 @@ void main() {
         discard;
     }
 
-    float hCenter = mix(minColorHsv.x, maxColorHsv.x, 0.5 + 0.5 * sin(time * hueSpeed));
+    float hCenter =tint+ mix(-tintVariation, tintVariation, 0.5 + 0.5 * sin(time * hueSpeed));
     float hMin = hCenter - hueVariation;
     float hMax = hCenter + hueVariation;
-    vec3 minHsv = minColorHsv;
-    vec3 maxHsv = maxColorHsv;
-    minHsv.x = hMin;
-    maxHsv.x = hMax;
+    vec3 minHsv = vec3(hMin,saturation-saturationVariation,lightness-lightnessVariation);
+    vec3 maxHsv =  vec3(hMax,saturation+saturationVariation,lightness+lightnessVariation);
     vec3 noise = v_noise;
     float blinkSpeed = mix(blinkSpeedMin, blinkSpeedMax, noise.z);
     noise.z = 0.5 * sin(noise.z * 6.28 + blinkSpeed * time) + 0.5;

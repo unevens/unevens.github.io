@@ -100,7 +100,7 @@ for (let i = 0; i < 2; i++) {
   fbos[i] = fxs.createScreenFramebuffer({ bits: 8, resolutionCoef: () => resolutionCoef });
 }
 const viewportSize = Float32Array.from(fxs.viewportSize);
-const mouse = Float32Array.from(fxs.mouse);
+const interactionPoint = Float32Array.from(fxs.mouse);
 const ratioXonY = Float32Array.from([1, 1]);
 const ratioYonX = Float32Array.from([1, 1]);
 const sideThresh = Float32Array.from([1, 1]);
@@ -147,15 +147,30 @@ function onNewFrame(time, deltaTime) {
   ratioYonX[0] = viewportSize[2] * viewportSize[1];
   let sideThresholdBase = params.sideThreshold;
   if (wideScreen) {
-    mouse[0] = 0.5 + (fxs.mouse[0] - 0.5) * ratioXonY[1];
-    mouse[1] = fxs.mouse[1];
     sideThresh[0] = ratioXonY[1] - ratioXonY[0] * (1.0 - sideThresholdBase);
     sideThresh[1] = sideThresholdBase;
   } else {
-    mouse[0] = fxs.mouse[0];
-    mouse[1] = 0.5 + (fxs.mouse[1] - 0.5) * ratioYonX[0];
     sideThresh[0] = sideThresholdBase;
     sideThresh[1] = ratioYonX[0] - ratioYonX[1] * (1.0 - sideThresholdBase);
+  }
+
+  if (params.interaction == "random_walk") {
+    interactionPoint[0] = Math.min(1.0, Math.max(0.0, interactionPoint[0] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0)));
+    interactionPoint[1] = Math.min(1.0, Math.max(0.0, interactionPoint[1] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0)));
+
+  } else {
+    if (params.interaction == "follow_mouse") {
+      fxs.SetUpdateMouseOnlyOnClick(false);
+    } else if (params.interaction == "on_click") {
+      fxs.SetUpdateMouseOnlyOnClick(true);
+    }
+    if (wideScreen) {
+      interactionPoint[0] = 0.5 + (fxs.mouse[0] - 0.5) * ratioXonY[1];
+      interactionPoint[1] = fxs.mouse[1];
+    } else {
+      interactionPoint[0] = fxs.mouse[0];
+      interactionPoint[1] = 0.5 + (fxs.mouse[1] - 0.5) * ratioYonX[0];
+    }
   }
 
   //simulation
@@ -166,7 +181,7 @@ function onNewFrame(time, deltaTime) {
   simulationProgram.bind();
   simulationProgram.setUniforms({
     stateTexture: simBuffers[0].textures[0],
-    attractor: mouse,
+    attractor: interactionPoint,
     dt: deltaTime,
     time,
     sideThresh,
@@ -227,7 +242,7 @@ function onNewFrame(time, deltaTime) {
 
   swapSimBuffers();
   if (fpsDiv && !fpsDiv.hidden) {
-    fpsDiv.innerText = "dt = " + (deltaTime*1000).toFixed(4) + "ms";
+    fpsDiv.innerText = "dt = " + (deltaTime * 1000).toFixed(4) + "ms";
   }
 }
 

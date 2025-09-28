@@ -1,6 +1,7 @@
 const simulations = ["single_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
+const interactions = ["follow_mouse", "on_click", "random_walk"];
 
 class NumParameter {
     constructor(options) {
@@ -24,6 +25,8 @@ const paramInitializer = {
     simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true }),
     particle: new StringParameter({ values: particles, index: 0, forceRefresh: true }),
     blend_mode: new StringParameter({ values: blend_modes, index: 0 }),
+    interaction: new StringParameter({ values: interactions, index: 0 }),
+    randomWalkSpeed: new NumParameter({ min: 0, max: .1, value: 0, step: 0.000001 }),
     numParticles: new NumParameter({ min: 1, max: 4096, value: 4096, step: 1 }),
     particleHeight: new NumParameter({ min: .01, max: .2, value: 0.05, step: 0.001 }),
     particleAspectRatio: new NumParameter({ min: .1, max: 10, value: 1 }),

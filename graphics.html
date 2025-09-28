@@ -63,24 +63,33 @@
     </div>
   </nav>
 
-  <div style="min-height: 100%">
-    <div id="ctrls">
-      <div id="wip_text">
-        "Night Light Escapede"
-        <br>
-        <br>
-        A Work in progress
-        <br>
-        <br>
-        WebGL fable physics simulation
+   <div style="min-height:100%">
+    <div id="ctrls" hidden="true" style="overflow-y: auto; font-family: monospace;">
+      
+      <div id="params"></div>
+      
+      <div id="saveload">
+        <button style="display:block;width:80px; height:30px;" onclick="document.getElementById('loadParams').click()">
+          <i class="fas fa-folder-open"></i> Load
+        </button>
+        <input type='file' id="loadParams" style="display:none">
+        <button id="saveParams" style="display:block;width:80px; height:30px;">
+          <i class="fas fa-save"></i> Save
+        </button>
       </div>
+
+      <div id="fps" style="font-size: xx-small" hidden="true">
+    
+      </div>
+
+
     </div>
 
     <i class="ctrls-toggle fa fa-gear fa-2x"
       onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
   </div>
 
-  <div class="text_home_cpy">Copyright &copy; Dario Mambro 2023</div>
+  <div class="text_home_cpy">Copyright &copy; Dario Mambro 2023-2025</div>
 
   <!-- Bootstrap core JavaScript -->
   <script src="vendor/jquery/jquery.min.js"></script>

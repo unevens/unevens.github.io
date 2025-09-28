@@ -3,10 +3,12 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { handleParameters, simulations, particles } from "./params.js";
+import { handleParameters, simulations, particles, blend_modes } from "./params.js";
 const twgl = fxs.twgl;
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
+
+const fpsDiv = document.getElementById("fps");
 
 const particleVS = new fxs.Shader("particleQuad");
 const simulationShaders = simulations.map((x) => new fxs.Shader(x));
@@ -23,54 +25,11 @@ const settings = {
   loopScreen: true,
 }
 
-let params = {
-
-  simulation: simulationShaders[0].name,
-  particle: particleShaders[0].name,
-
-  use_alpha_blend: false,
-  numParticles: 4096,
-  particleHeight: 0.05,
-  particleAspectRatio: 1,
-  sideThreshold: 1.0,
-
-  gravity: {
-    forceCoef: 0.005,
-    forcePow: 4.0,
-    maxForce: 0.25,
-    dragCoef: 1.0,
-    noizForce: 0.8,
-    pulseCoef: 0.1,
-    pulseFreq: 0.1,
-    sideForce: 1.5,
-    hardSide: 0.05,
-  },
-
-  sticky_starlight: {
-    hueVariation: 0.025,
-    hueSpeed: 0.05,
-    maxColorHsv: [1.0 / 6.0, 0.7, 1.0],
-    minColorHsv: [5.0 / 6.0, 0.2, 0.33],
-    thickness: .05,
-    falloff: .5,
-    threshold: 0.0001,
-    blinkSpeedMin: 1.0,
-    blinkSpeedMax: 10.0,
-  },
-
-  bloom: {
-    numPasses: 4,
-    amount: 1.8,
-    threshold: 0.5,
-    radius: 0.95,
-    strength: 10,
-  },
-};
+let params = {};
 
 handleParameters(() => params, (p) => { params = p; });
 
 const numParticles = () => Math.min(params.numParticles, simSize[0] * simSize[1]);
-
 
 let simulation = "";
 let particle = "";
@@ -171,7 +130,6 @@ document.addEventListener("keydown", (e) => {
 function onStart() {
   fxs.quadVAO.bind();
   initializeParticles();
-  bloom.setParams(params.bloom);
 }
 
 function onNewFrame(time, deltaTime) {
@@ -226,10 +184,12 @@ function onNewFrame(time, deltaTime) {
 
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  if (params.use_alpha_blend) {
+  if (params.blend_mode === "alpha_blend") {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  } else {
+  } else if (params.blend_mode === "additive") {
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+  } else if (params.blend_mode === "alpha_mask") {
     gl.enable(gl.DEPTH_TEST);
   }
 
@@ -247,12 +207,15 @@ function onNewFrame(time, deltaTime) {
   }
   fxs.quadVAO.drawInstanced(numParticles());
 
-  if (params.use_alpha_blend) {
+  if (params.blend_mode === "alpha_blend") {
     gl.disable(gl.BLEND);
-  } else {
+  } else if (params.blend_mode === "additive") {
+    gl.disable(gl.BLEND);
+  } else if (params.blend_mode === "alpha_mask") {
     gl.disable(gl.DEPTH_TEST);
   }
 
+  bloom.setParams(params.bloom);
   bloom.apply(fbos[0].textures[0]);
 
   if (doAA) {
@@ -263,6 +226,9 @@ function onNewFrame(time, deltaTime) {
   }
 
   swapSimBuffers();
+  if (fpsDiv && !fpsDiv.hidden) {
+    fpsDiv.innerText = "dt = " + (deltaTime*1000).toFixed(4) + "ms";
+  }
 }
 
 fxs.start(onStart, onNewFrame);

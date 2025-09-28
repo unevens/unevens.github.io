@@ -1,12 +1,13 @@
-const simulations = ["gravity"];
+const simulations = ["single_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
+const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 
 class NumParameter {
     constructor(options) {
         this.min = options.min;
         this.max = options.max;
         this.value = options.value;
-        this.step = options.step || 0;
+        this.step = options.step || 0.001;
     }
 }
 
@@ -14,20 +15,21 @@ class StringParameter {
     constructor(options) {
         this.values = options.values;
         this.index = options.index;
+        this.forceRefresh = options.forceRefresh || false;
     }
 }
 
-let paramInitializer = {
+const paramInitializer = {
 
-    simulation: new StringParameter({ values: simulations, index: 0 }),
-    particle: new StringParameter({ values: particles, index: 0 }),
-    use_alpha_blend: false,
-    numParticles: new NumParameter({ min: 1, max: 4096, value: 4096 }),
-    particleHeight: new NumParameter({ min: .01, max: .2, value: 0.03 }),
+    simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true }),
+    particle: new StringParameter({ values: particles, index: 0, forceRefresh: true }),
+    blend_mode: new StringParameter({ values: blend_modes, index: 0 }),
+    numParticles: new NumParameter({ min: 1, max: 4096, value: 4096, step: 1 }),
+    particleHeight: new NumParameter({ min: .01, max: .2, value: 0.05, step: 0.001 }),
     particleAspectRatio: new NumParameter({ min: .1, max: 10, value: 1 }),
     sideThreshold: new NumParameter({ min: .1, max: 10, value: 1 }),
 
-    gravity: {
+    single_attractor: {
         forceCoef: new NumParameter({ min: 0, max: .1, value: 0.005 }),
         forcePow: new NumParameter({ min: .2, max: 16, value: 4.0 }),
         maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
@@ -48,7 +50,7 @@ let paramInitializer = {
         saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
         lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
         lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
-        thickness: new NumParameter({ min: 0, max: 1, value: .05 }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
         falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
         threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
         threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
@@ -58,10 +60,10 @@ let paramInitializer = {
 
     bloom: {
         numPasses: new NumParameter({ min: 0, max: 16, value: 4, step: 1 }),
-        amount: new NumParameter({ min: 0., max: 8, value: 1.5 }),
-        threshold: new NumParameter({ min: 0., max: 1, value: .5 }),
-        radius: new NumParameter({ min: 0., max: 4, value: 0.95 }),
-        strength: new NumParameter({ min: .1, max: 50, value: 10 }),
+        amount: new NumParameter({ min: 0., max: 8, value: 1.8 }),
+        threshold: new NumParameter({ min: 0., max: 1, value: 0.7 }),
+        radius: new NumParameter({ min: 0., max: 4, value: 4 }),
+        strength: new NumParameter({ min: .1, max: 50, value: 20 }),
     },
 };
 
@@ -72,7 +74,7 @@ function initParamObj(paramInit) {
             obj[key] = paramInit[key].value;
         } else if (paramInit[key] instanceof StringParameter) {
             obj[key] = paramInit[key].values[paramInit[key].index];
-        }else if (typeof paramInit[key] === "boolean") {
+        } else if (typeof paramInit[key] === "boolean") {
             obj[key] = paramInit[key];
         } else if (paramInit[key] instanceof Object) {
             obj[key] = initParamObj(paramInit[key]);
@@ -87,8 +89,6 @@ function initParamObj(paramInit) {
 
 function handleParameters(getParams, setParams) {
     setParams(initParamObj(paramInitializer));
-    console.log("yooo")
-    console.log(getParams())
     const paramsContainer = document.getElementById('params');
 
     function cleanupUi() {
@@ -97,93 +97,127 @@ function handleParameters(getParams, setParams) {
         }
     }
 
-    function addParamsToUi(getObj) {
-        for (let key in getObj()) {
-            if (getObj()[key] instanceof Object) {
-                const titleDiv = document.createElement('div');
-                titleDiv.innerText = key;
-                titleDiv.style = "font-weight: bold"
-                paramsContainer.appendChild(titleDiv);
-                const getSubObj = () => { return getObj()[key]; }
-                addParamsToUi(getSubObj); //yes, yes, this is bad
-            }
-            else if (getObj()[key] instanceof Array) {
-                const paramDiv = document.createElement('div');
-                paramDiv.innerText = key;
-                paramDiv.style = "font-size: xx-small"
-                const textBoxs = []
-                for (let i = 0; i < getObj()[key].length; ++i) {
-                    const index = i;
-                    const numInputBox = document.createElement('input');
-                    numInputBox.type = 'number';
-                    numInputBox.value = getObj()[key][index];
-                    textBoxs.push(numInputBox);
-                    numInputBox.oninput = () => {
-                        getObj()[key] = numInputBox.value;
-                        console.log("array " + key + " index " + index + " value " + numInputBox.value);
-                    };
-                    paramDiv.appendChild(numInputBox);
-                }
-                const reset = document.createElement('button');
-                reset.innerHTML = '<i class="fas fa-undo"></i>'
-                reset.onclick = () => {
-                    for (let numInputBox in textBoxs) {
-                        numInputBox.value = defaultValue;
-                    }
-                    getObj()[key] = defaultValue;
-                    console.log("reset.onclick " + key + " to " + numInputBox.value);
-                };
-                paramDiv.appendChild(reset);
-            }
-            else if (typeof getObj()[key] === "boolean") {
+    function addParamsToUi(getJson, getInit) {
+
+        for (let key in getInit()) {
+            if (typeof getInit()[key] === "boolean") {
                 const paramDiv = document.createElement('div');
                 paramDiv.innerText = key;
                 paramDiv.style = "font-size: xx-small"
                 const numInputBox = document.createElement('input');
                 numInputBox.type = 'checkbox';
-                numInputBox.value = getObj()[key];
+                numInputBox.value = getJson()[key];
                 numInputBox.oninput = () => {
-                    getObj()[key] = numInputBox.value;
-                    console.log("numInputBox.oninput " + numInputBox.value);
+                    getJson()[key] = numInputBox.value;
+                    console.log(key + " numInputBox.oninput " + numInputBox.value);
                 };
                 paramDiv.appendChild(numInputBox);
-                const defaultValue = getObj()[key];
+                const defaultValue = getJson()[key];
                 const reset = document.createElement('button');
                 reset.innerHTML = '<i class="fas fa-undo"></i>'
                 reset.onclick = () => {
                     numInputBox.value = defaultValue;
-                    getObj()[key] = defaultValue;
+                    getJson()[key] = defaultValue;
                     console.log("reset.onclick " + numInputBox.value);
                 };
                 paramDiv.appendChild(reset);
                 paramsContainer.appendChild(paramDiv);
             }
-            else {
+            else if (getInit()[key] instanceof NumParameter) {
                 const paramDiv = document.createElement('div');
+                paramsContainer.appendChild(paramDiv);
                 paramDiv.innerText = key;
                 paramDiv.style = "font-size: xx-small"
+                const slider = document.createElement('input');
+                paramDiv.appendChild(slider);
                 const numInputBox = document.createElement('input');
-                numInputBox.type = 'number';
-                numInputBox.value = getObj()[key];
-                numInputBox.oninput = () => {
-                    getObj()[key] = numInputBox.value;
-                    console.log("numInputBox.oninput " + numInputBox.value);
-                };
                 paramDiv.appendChild(numInputBox);
-                const defaultValue = getObj()[key];
                 const reset = document.createElement('button');
+                paramDiv.appendChild(reset);
+
+                const init = getInit()[key];
+                slider.type = 'range';
+                slider.min = init.min;
+                slider.max = init.max;
+                slider.step = init.step;
+                slider.value = getJson()[key];
+                slider.oninput = () => {
+                    getJson()[key] = slider.value;
+                    numInputBox.value = slider.value;
+                    console.log(key + " slider.oninput " + slider.value);
+                };
+                numInputBox.type = 'number';
+                numInputBox.value = getJson()[key];
+                numInputBox.style = "width:60px"
+                numInputBox.oninput = () => {
+                    getJson()[key] = numInputBox.value;
+                    slider.value = numInputBox.value;
+                    console.log(key + " numInputBox.oninput " + numInputBox.value);
+                };
+                const defaultValue = getJson()[key];
                 reset.innerHTML = '<i class="fas fa-undo"></i>'
                 reset.onclick = () => {
                     numInputBox.value = defaultValue;
-                    getObj()[key] = defaultValue;
+                    slider.value = defaultValue;
+                    getJson()[key] = defaultValue;
                     console.log("reset.onclick " + numInputBox.value);
                 };
-                paramDiv.appendChild(reset);
+            }
+            else if (getInit()[key] instanceof StringParameter) {
+                const paramDiv = document.createElement('div');
                 paramsContainer.appendChild(paramDiv);
+                paramDiv.innerText = key;
+                paramDiv.style = "font-size: xx-small"
+                const select = document.createElement('select');
+                paramDiv.appendChild(select);
+                const defaultValue = getJson()[key];
+
+                const init = getInit()[key];
+                for (let optionText of init.values) {
+                    let option = document.createElement("option");
+                    option.value = optionText;
+                    option.text = optionText;
+                    select.appendChild(option);
+                }
+                select.value = defaultValue;
+                select.onchange = () => {
+                    getJson()[key] = select.value;
+                    console.log(key + " select.onchange " + select.value);
+                    if (init.forceRefresh) {
+                        cleanupUi();
+                        initializeUi();
+                    }
+                };
+                const reset = document.createElement('button');
+                paramDiv.appendChild(reset);
+                reset.innerHTML = '<i class="fas fa-undo"></i>'
+                reset.onclick = () => {
+                    getJson()[key] = defaultValue;
+                    select.value = defaultValue;
+                    console.log(key + " reset.onclick " + select.value);
+                    if (init.forceRefresh) {
+                        cleanupUi();
+                        initializeUi();
+                    }
+                };
+            }
+            else if (paramInitializer[key] instanceof Object) {
+                let skip = true;
+                if (key == 'bloom' || key == getJson()["particle"] || key == getJson()["simulation"])
+                    skip = false;
+                if (skip)
+                    continue;
+                const titleDiv = document.createElement('div');
+                titleDiv.innerText = key;
+                titleDiv.style = "font-weight: bold"
+                paramsContainer.appendChild(titleDiv);
+                const getSubObj = () => { return getJson()[key]; }
+                const getSubInit = () => { return getInit()[key]; }
+                addParamsToUi(getSubObj, getSubInit); //yes, yes, this is bad
             }
         }
-
     }
+
 
     function downloadParams(obj) {
         var element = document.createElement('a');
@@ -196,7 +230,7 @@ function handleParameters(getParams, setParams) {
     }
 
     function initializeUi() {
-        addParamsToUi(() => getParams());
+        addParamsToUi(() => getParams(), () => paramInitializer);
     }
 
     initializeUi();
@@ -243,7 +277,7 @@ function handleParameters(getParams, setParams) {
 
 export {
     handleParameters,
-    NumParameter,
     simulations,
-    particles
+    particles,
+    blend_modes
 }

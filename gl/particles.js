@@ -155,9 +155,16 @@ function onNewFrame(time, deltaTime) {
   }
 
   if (params.interaction == "random_walk") {
-    interactionPoint[0] = Math.min(1.0, Math.max(0.0, interactionPoint[0] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0)));
-    interactionPoint[1] = Math.min(1.0, Math.max(0.0, interactionPoint[1] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0)));
-
+    interactionPoint[0] = interactionPoint[0] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0);
+    interactionPoint[0] -= Math.floor(interactionPoint[0]);
+    if (interactionPoint[0] < 0.0) {
+      interactionPoint[0] += 1.0;
+    }
+    interactionPoint[1] = interactionPoint[1] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0);
+    interactionPoint[1] -= Math.floor(interactionPoint[1]);
+    if (interactionPoint[1] < 0.0) {
+      interactionPoint[1] += 1.0;
+    }
   } else {
     if (params.interaction == "follow_mouse") {
       fxs.SetUpdateMouseOnlyOnClick(false);
@@ -203,6 +210,7 @@ function onNewFrame(time, deltaTime) {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   } else if (params.blend_mode === "additive") {
+    gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
   } else if (params.blend_mode === "alpha_mask") {
     gl.enable(gl.DEPTH_TEST);

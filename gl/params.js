@@ -1,7 +1,12 @@
+const presets = ["default", "addtive_dark"];
 const simulations = ["single_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["follow_mouse", "on_click", "random_walk"];
+
+let currentPreset = presets[0];
+let setParams = () => { };
+let getParams = () => { };
 
 class NumParameter {
     constructor(options) {
@@ -17,11 +22,13 @@ class StringParameter {
         this.values = options.values;
         this.index = options.index;
         this.forceRefresh = options.forceRefresh || false;
+        this.onChanged = options.onChanged || null;
     }
 }
 
 const paramInitializer = {
 
+    preset: new StringParameter({ values: presets, index: 0, onChanged: () => { onPresetChanged(); } }),
     simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true }),
     particle: new StringParameter({ values: particles, index: 0, forceRefresh: true }),
     blend_mode: new StringParameter({ values: blend_modes, index: 0 }),
@@ -89,181 +96,191 @@ function initParamObj(paramInit) {
     return obj;
 }
 
+const paramsContainer = document.getElementById('params');
 
-function handleParameters(getParams, setParams) {
-    setParams(initParamObj(paramInitializer));
-    const paramsContainer = document.getElementById('params');
-
-    function cleanupUi() {
-        while (paramsContainer.firstChild) {
-            paramsContainer.removeChild(paramsContainer.lastChild);
-        }
+function cleanupUi() {
+    while (paramsContainer.firstChild) {
+        paramsContainer.removeChild(paramsContainer.lastChild);
     }
+}
 
-    function addParamsToUi(getJson, getInit) {
+function addParamsToUi(getJson, getInit) {
 
-        for (let key in getInit()) {
-            if (typeof getInit()[key] === "boolean") {
-                const paramDiv = document.createElement('div');
-                paramDiv.innerText = key;
-                paramDiv.style = "font-size: xx-small"
-                const numInputBox = document.createElement('input');
-                numInputBox.type = 'checkbox';
-                numInputBox.value = getJson()[key];
-                numInputBox.oninput = () => {
-                    getJson()[key] = numInputBox.value;
-                    console.log(key + " numInputBox.oninput " + numInputBox.value);
-                };
-                paramDiv.appendChild(numInputBox);
-                const defaultValue = getJson()[key];
-                const reset = document.createElement('button');
-                reset.innerHTML = '<i class="fas fa-undo"></i>'
-                reset.onclick = () => {
-                    numInputBox.value = defaultValue;
-                    getJson()[key] = defaultValue;
-                    console.log("reset.onclick " + numInputBox.value);
-                };
-                paramDiv.appendChild(reset);
-                paramsContainer.appendChild(paramDiv);
+    for (let key in getInit()) {
+        if (typeof getInit()[key] === "boolean") {
+            const paramDiv = document.createElement('div');
+            paramDiv.innerText = key;
+            paramDiv.style = "font-size: xx-small"
+            const numInputBox = document.createElement('input');
+            numInputBox.type = 'checkbox';
+            numInputBox.value = getJson()[key];
+            numInputBox.oninput = () => {
+                getJson()[key] = numInputBox.value;
+                console.log(key + " numInputBox.oninput " + numInputBox.value);
+            };
+            paramDiv.appendChild(numInputBox);
+            const defaultValue = getJson()[key];
+            const reset = document.createElement('button');
+            reset.innerHTML = '<i class="fas fa-undo"></i>'
+            reset.onclick = () => {
+                numInputBox.value = defaultValue;
+                getJson()[key] = defaultValue;
+                console.log("reset.onclick " + numInputBox.value);
+            };
+            paramDiv.appendChild(reset);
+            paramsContainer.appendChild(paramDiv);
+        }
+        else if (getInit()[key] instanceof NumParameter) {
+            const paramDiv = document.createElement('div');
+            paramsContainer.appendChild(paramDiv);
+            paramDiv.innerText = key;
+            paramDiv.style = "font-size: xx-small"
+            const slider = document.createElement('input');
+            paramDiv.appendChild(slider);
+            const numInputBox = document.createElement('input');
+            paramDiv.appendChild(numInputBox);
+            const reset = document.createElement('button');
+            paramDiv.appendChild(reset);
+
+            const init = getInit()[key];
+            slider.type = 'range';
+            slider.min = init.min;
+            slider.max = init.max;
+            slider.step = init.step;
+            slider.value = getJson()[key];
+            slider.oninput = () => {
+                getJson()[key] = slider.value;
+                numInputBox.value = slider.value;
+                console.log(key + " slider.oninput " + slider.value);
+            };
+            numInputBox.type = 'number';
+            numInputBox.value = getJson()[key];
+            numInputBox.style = "width:60px"
+            numInputBox.oninput = () => {
+                getJson()[key] = numInputBox.value;
+                slider.value = numInputBox.value;
+                console.log(key + " numInputBox.oninput " + numInputBox.value);
+            };
+            const defaultValue = getJson()[key];
+            reset.innerHTML = '<i class="fas fa-undo"></i>'
+            reset.onclick = () => {
+                numInputBox.value = defaultValue;
+                slider.value = defaultValue;
+                getJson()[key] = defaultValue;
+                console.log("reset.onclick " + numInputBox.value);
+            };
+        }
+        else if (getInit()[key] instanceof StringParameter) {
+            const paramDiv = document.createElement('div');
+            paramsContainer.appendChild(paramDiv);
+            paramDiv.innerText = key;
+            paramDiv.style = "font-size: xx-small"
+            const select = document.createElement('select');
+            paramDiv.appendChild(select);
+            const defaultValue = getJson()[key];
+
+            const init = getInit()[key];
+            for (let optionText of init.values) {
+                let option = document.createElement("option");
+                option.value = optionText;
+                option.text = optionText;
+                select.appendChild(option);
             }
-            else if (getInit()[key] instanceof NumParameter) {
-                const paramDiv = document.createElement('div');
-                paramsContainer.appendChild(paramDiv);
-                paramDiv.innerText = key;
-                paramDiv.style = "font-size: xx-small"
-                const slider = document.createElement('input');
-                paramDiv.appendChild(slider);
-                const numInputBox = document.createElement('input');
-                paramDiv.appendChild(numInputBox);
-                const reset = document.createElement('button');
-                paramDiv.appendChild(reset);
-
-                const init = getInit()[key];
-                slider.type = 'range';
-                slider.min = init.min;
-                slider.max = init.max;
-                slider.step = init.step;
-                slider.value = getJson()[key];
-                slider.oninput = () => {
-                    getJson()[key] = slider.value;
-                    numInputBox.value = slider.value;
-                    console.log(key + " slider.oninput " + slider.value);
-                };
-                numInputBox.type = 'number';
-                numInputBox.value = getJson()[key];
-                numInputBox.style = "width:60px"
-                numInputBox.oninput = () => {
-                    getJson()[key] = numInputBox.value;
-                    slider.value = numInputBox.value;
-                    console.log(key + " numInputBox.oninput " + numInputBox.value);
-                };
-                const defaultValue = getJson()[key];
-                reset.innerHTML = '<i class="fas fa-undo"></i>'
-                reset.onclick = () => {
-                    numInputBox.value = defaultValue;
-                    slider.value = defaultValue;
-                    getJson()[key] = defaultValue;
-                    console.log("reset.onclick " + numInputBox.value);
-                };
-            }
-            else if (getInit()[key] instanceof StringParameter) {
-                const paramDiv = document.createElement('div');
-                paramsContainer.appendChild(paramDiv);
-                paramDiv.innerText = key;
-                paramDiv.style = "font-size: xx-small"
-                const select = document.createElement('select');
-                paramDiv.appendChild(select);
-                const defaultValue = getJson()[key];
-
-                const init = getInit()[key];
-                for (let optionText of init.values) {
-                    let option = document.createElement("option");
-                    option.value = optionText;
-                    option.text = optionText;
-                    select.appendChild(option);
+            select.value = defaultValue;
+            select.onchange = () => {
+                getJson()[key] = select.value;
+                console.log(key + " select.onchange " + select.value);
+                if (init.onChanged) {
+                    init.onChanged();
                 }
+                if (init.forceRefresh) {
+                    cleanupUi();
+                    initializeUi();
+                }
+            };
+            const reset = document.createElement('button');
+            paramDiv.appendChild(reset);
+            reset.innerHTML = '<i class="fas fa-undo"></i>'
+            reset.onclick = () => {
+                getJson()[key] = defaultValue;
                 select.value = defaultValue;
-                select.onchange = () => {
-                    getJson()[key] = select.value;
-                    console.log(key + " select.onchange " + select.value);
-                    if (init.forceRefresh) {
-                        cleanupUi();
-                        initializeUi();
-                    }
-                };
-                const reset = document.createElement('button');
-                paramDiv.appendChild(reset);
-                reset.innerHTML = '<i class="fas fa-undo"></i>'
-                reset.onclick = () => {
-                    getJson()[key] = defaultValue;
-                    select.value = defaultValue;
-                    console.log(key + " reset.onclick " + select.value);
-                    if (init.forceRefresh) {
-                        cleanupUi();
-                        initializeUi();
-                    }
-                };
-            }
-            else if (paramInitializer[key] instanceof Object) {
-                let skip = true;
-                if (key == 'bloom' || key == getJson()["particle"] || key == getJson()["simulation"])
-                    skip = false;
-                if (skip)
-                    continue;
-                const titleDiv = document.createElement('div');
-                titleDiv.innerText = key;
-                titleDiv.style = "font-weight: bold"
-                paramsContainer.appendChild(titleDiv);
-                const getSubObj = () => { return getJson()[key]; }
-                const getSubInit = () => { return getInit()[key]; }
-                addParamsToUi(getSubObj, getSubInit); //yes, yes, this is bad
-            }
+                console.log(key + " reset.onclick " + select.value);
+                if (init.onChanged) {
+                    init.onChanged();
+                }
+                if (init.forceRefresh) {
+                    cleanupUi();
+                    initializeUi();
+                }
+            };
+        }
+        else if (getInit()[key] instanceof Object) {
+            let skip = true;
+            if (key == 'bloom' || key == getJson()["particle"] || key == getJson()["simulation"])
+                skip = false;
+            if (skip)
+                continue;
+            const titleDiv = document.createElement('div');
+            titleDiv.innerText = key;
+            titleDiv.style = "font-weight: bold"
+            paramsContainer.appendChild(titleDiv);
+            const getSubObj = () => { return getJson()[key]; }
+            const getSubInit = () => { return getInit()[key]; }
+            addParamsToUi(getSubObj, getSubInit); //yes, yes, this is bad
         }
     }
+}
 
+function downloadParams(obj) {
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + JSON.stringify(obj));
+    element.setAttribute('download', "unevens_net.json");
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
 
-    function downloadParams(obj) {
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + JSON.stringify(obj));
-        element.setAttribute('download', "unevens_net.json");
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
+function initializeUi() {
+    addParamsToUi(() => getParams(), () => paramInitializer);
+}
+
+function readTextFile(readFile) {
+    var reader = new FileReader();
+    reader.readAsText(readFile, "UTF-8");
+    reader.onload = loaded;
+    reader.onerror = errorHandler;
+}
+
+function applyParams(newParams) {
+    setParams(newParams);
+    console.log(newParams);
+    cleanupUi();
+    initializeUi();
+}
+
+function loaded(evt) {
+    const newParams = JSON.parse(evt.target.result);
+    applyParams(newParams);
+}
+
+function errorHandler(evt) {
+    if (evt.target.error.name == "NotReadableError") {
+        console.log("The file could not be read");
     }
+    alert("Failed to load file");
+}
 
-    function initializeUi() {
-        addParamsToUi(() => getParams(), () => paramInitializer);
-    }
-
+function handleParameters(paramGetter, paramSetter) {
+    getParams = paramGetter;
+    setParams = paramSetter;
+    setParams(initParamObj(paramInitializer));
     initializeUi();
 
     const saveParams = document.getElementById('saveParams');
     saveParams.onclick = () => {
         downloadParams(getParams());
     };
-
-    function readTextFile(readFile) {
-        var reader = new FileReader();
-        reader.readAsText(readFile, "UTF-8");
-        reader.onload = loaded;
-        reader.onerror = errorHandler;
-    }
-
-    function loaded(evt) {
-        const newParams = JSON.parse(evt.target.result);
-        setParams(newParams);
-        console.log(newParams);
-        cleanupUi();
-        initializeUi();
-    }
-
-    function errorHandler(evt) {
-        if (evt.target.error.name == "NotReadableError") {
-            console.log("The file could not be read");
-        }
-        alert("Failed to load file");
-    }
 
     const loadParams = document.getElementById('loadParams');
     loadParams.type = "file";
@@ -275,7 +292,23 @@ function handleParameters(getParams, setParams) {
             readTextFile(loadParams.files[0]);
         }
     });
+}
 
+function onPresetChanged() {
+    const url = "../presets/" + getParams().preset + ".json";
+    try {
+        fetch(url).then((response) => {
+            if (response.ok) {
+                response.json().then(
+                    (preset) => {
+                        applyParams(preset);
+                    }
+                );
+            }
+        });
+    } catch (error) {
+        console.error(error.message);
+    }
 }
 
 export {

@@ -25,7 +25,7 @@ class Smaa {
         this.weightBuffer = fxs.createScreenFramebuffer({ bits: 16 });
 
         this.searchTexture = twgl.createTexture(gl, { src: "../smaa/SmaaSearchTex.png", flipY: true });
-        this.areaTexture = twgl.createTexture(gl, {src: "../smaa/SmaaareaTex.png"});
+        this.areaTexture = twgl.createTexture(gl, {src: "../smaa/SmaaAreaTex.png"});
 
         this.uTexelSize = new Float32Array(2);
         this.uViewportSize = new Float32Array(2);

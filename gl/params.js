@@ -1,4 +1,4 @@
-const presets = ["default", "additive_dark"];
+const themes = ["index", "festival-starfield", "additive_dark"];
 const simulations = ["single_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
@@ -15,9 +15,7 @@ class NumParameter {
         this.step = options.step || 0.001;
     }
 
-    addToUi(getJson, key, container) {
-        const paramDiv = document.createElement('div');
-        container.appendChild(paramDiv);
+    addToUi(getJson, key, paramDiv) {
         paramDiv.innerText = key;
         paramDiv.style = "font-size: xx-small"
         const slider = document.createElement('input');
@@ -63,9 +61,7 @@ class StringParameter {
         this.forceRefresh = options.forceRefresh || false;
         this.onChanged = options.onChanged || null;
     }
-    addToUi(getJson, key, container) {
-        const paramDiv = document.createElement('div');
-        container.appendChild(paramDiv);
+    addToUi(getJson, key, paramDiv) {
         paramDiv.innerText = key;
         paramDiv.style = "font-size: xx-small"
         const select = document.createElement('select');
@@ -108,7 +104,6 @@ class StringParameter {
     }
 }
 
-const preset = new StringParameter({ values: presets, index: 0, onChanged: () => { onPresetChanged(); } });
 
 const paramInitializer = {
 
@@ -180,6 +175,8 @@ function initParamObj(paramInit) {
 }
 
 const paramsContainer = document.getElementById('params');
+let themeSelect;
+let currentTheme = themes[0];
 
 function cleanupUi() {
     while (paramsContainer.firstChild) {
@@ -188,7 +185,6 @@ function cleanupUi() {
 }
 
 function addParamsToUi(getJson, getInit) {
-
     for (let key in getInit()) {
         const init = getInit()[key];
         if (typeof init === "boolean") {
@@ -215,7 +211,9 @@ function addParamsToUi(getJson, getInit) {
             paramsContainer.appendChild(paramDiv);
         }
         else if (init.addToUi) {
-            init.addToUi(getJson, key, paramsContainer);
+            const paramDiv = document.createElement('div');
+            paramsContainer.appendChild(paramDiv);
+            init.addToUi(getJson, key, paramDiv);
         }
         else if (getInit()[key] instanceof Object) {
             let skip = true;
@@ -274,7 +272,9 @@ function errorHandler(evt) {
     alert("Failed to load file");
 }
 
-function handleParameters(paramGetter, paramSetter) {
+
+
+function createUi(paramGetter, paramSetter) {
     getParams = paramGetter;
     setParams = paramSetter;
     setParams(initParamObj(paramInitializer));
@@ -295,16 +295,35 @@ function handleParameters(paramGetter, paramSetter) {
             readTextFile(loadParams.files[0]);
         }
     });
+
+
+    themeSelect = document.getElementById('zenbox-theme');
+    for (let optionText of themes) {
+        let option = document.createElement("option");
+        option.value = optionText;
+        option.text = optionText;
+        themeSelect.appendChild(option);
+    }
+    themeSelect.value = currentTheme;
+    themeSelect.onchange = () => {
+        console.log("themeSelect .onchange " + themeSelect.value);
+        setTheme(themeSelect.value);
+    };
+
 }
 
-function onPresetChanged() {
-    const url = "../presets/" + getParams().preset + ".json";
+function setTheme(theme) {
+    const url = "../themes/" + theme + ".json";
     try {
         fetch(url).then((response) => {
             if (response.ok) {
                 response.json().then(
-                    (preset) => {
-                        applyParams(preset);
+                    (themeData) => {
+                        applyParams(themeData);
+                        currentTheme = theme;
+                        if (themeSelect) {
+                            themeSelect.value = theme;
+                        }
                     }
                 );
             }
@@ -314,10 +333,14 @@ function onPresetChanged() {
     }
 }
 
+
+
+
+
 export {
-    handleParameters,
+    createUi,
     simulations,
     particles,
     blend_modes,
-    onPresetChanged
+    setTheme
 }

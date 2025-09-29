@@ -3,7 +3,7 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { handleParameters, simulations, particles, onPresetChanged } from "./params.js";
+import { createUi, simulations, particles, setTheme } from "./params.js";
 const twgl = fxs.twgl;
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
@@ -27,7 +27,7 @@ const settings = {
 
 let params = {};
 
-handleParameters(() => params, (p) => { params = p; });
+createUi(() => params, (p) => { params = p; });
 
 const numParticles = () => Math.min(params.numParticles, simSize[0] * simSize[1]);
 
@@ -254,15 +254,10 @@ function onNewFrame(time, deltaTime) {
   }
 }
 
-function setPreset(preset) {
-  params.preset = preset || "default";
-  onPresetChanged();
-}
-
 function start() {
   fxs.start(onStart, onNewFrame);
 }
 
 export {
-  start, setPreset
+  start, setTheme
 }

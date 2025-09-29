@@ -425,12 +425,13 @@ body {
   color: white;
 }
 
-.ctrls-toggle {
+.ui-head {
   bottom: 3vh;
   right: 3vw;
   display: flex;
   position: fixed;
   z-index: 1;
+  font-size: small;
   color: rgb(61, 61, 61);
 }
 

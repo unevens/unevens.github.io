@@ -116,8 +116,10 @@
 
     </div>
 
-    <i class="ctrls-toggle fa fa-gear fa-2x"
-      onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
+    <div class="ui-head">
+      ZenBox Theme:  &nbsp;<select id="zenbox-theme"> </select> &nbsp;&nbsp;
+      <i class="ctrls-toggle fa fa-edit fa-2x" onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
+    </div>
   </div>
 
   <div class="text_home_cpy">Copyright &copy; Dario Mambro 2023-2025</div>
@@ -132,8 +134,8 @@
   <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
 
   <script type="module">
-    import { start, setPreset } from "./gl/particles.js";
-    setPreset("index");
+    import { start, setTheme } from "./gl/particles.js";
+    setTheme("index");
     start();
   </script>
 </body>

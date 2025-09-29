@@ -3,7 +3,7 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { handleParameters, simulations, particles, blend_modes } from "./params.js";
+import { handleParameters, simulations, particles, onPresetChanged } from "./params.js";
 const twgl = fxs.twgl;
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
@@ -254,4 +254,15 @@ function onNewFrame(time, deltaTime) {
   }
 }
 
-fxs.start(onStart, onNewFrame);
+function setPreset(preset) {
+  params.preset = preset || "default";
+  onPresetChanged();
+}
+
+function start() {
+  fxs.start(onStart, onNewFrame);
+}
+
+export {
+  start, setPreset
+}

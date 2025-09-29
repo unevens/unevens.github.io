@@ -1,10 +1,9 @@
-const presets = ["default", "addtive_dark"];
+const presets = ["default", "additive_dark"];
 const simulations = ["single_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["follow_mouse", "on_click", "random_walk"];
 
-let currentPreset = presets[0];
 let setParams = () => { };
 let getParams = () => { };
 
@@ -15,6 +14,46 @@ class NumParameter {
         this.value = options.value;
         this.step = options.step || 0.001;
     }
+
+    addToUi(getJson, getInit, key, container) {
+        const paramDiv = document.createElement('div');
+        container.appendChild(paramDiv);
+        paramDiv.innerText = key;
+        paramDiv.style = "font-size: xx-small"
+        const slider = document.createElement('input');
+        paramDiv.appendChild(slider);
+        const numInputBox = document.createElement('input');
+        paramDiv.appendChild(numInputBox);
+        const reset = document.createElement('button');
+        paramDiv.appendChild(reset);
+
+        slider.type = 'range';
+        slider.min = this.min;
+        slider.max = this.max;
+        slider.step = this.step;
+        slider.value = getJson()[key];
+        slider.oninput = () => {
+            getJson()[key] = slider.value;
+            numInputBox.value = slider.value;
+            console.log(key + " slider.oninput " + slider.value);
+        };
+        numInputBox.type = 'number';
+        numInputBox.value = getJson()[key];
+        numInputBox.style = "width:60px"
+        numInputBox.oninput = () => {
+            getJson()[key] = numInputBox.value;
+            slider.value = numInputBox.value;
+            console.log(key + " numInputBox.oninput " + numInputBox.value);
+        };
+        const defaultValue = getJson()[key];
+        reset.innerHTML = '<i class="fas fa-undo"></i>'
+        reset.onclick = () => {
+            numInputBox.value = defaultValue;
+            slider.value = defaultValue;
+            getJson()[key] = defaultValue;
+            console.log("reset.onclick " + numInputBox.value);
+        };
+    }
 }
 
 class StringParameter {
@@ -24,11 +63,55 @@ class StringParameter {
         this.forceRefresh = options.forceRefresh || false;
         this.onChanged = options.onChanged || null;
     }
+    addToUi(getJson, getInit, key, container) {
+        const paramDiv = document.createElement('div');
+        container.appendChild(paramDiv);
+        paramDiv.innerText = key;
+        paramDiv.style = "font-size: xx-small"
+        const select = document.createElement('select');
+        paramDiv.appendChild(select);
+        const defaultValue = getJson()[key];
+        console.log("adding select for " + key + " with default " + defaultValue)
+        for (let optionText of this.values) {
+            let option = document.createElement("option");
+            option.value = optionText;
+            option.text = optionText;
+            select.appendChild(option);
+        }
+        select.value = defaultValue;
+        select.onchange = () => {
+            getJson()[key] = select.value;
+            console.log(key + " select.onchange " + select.value);
+            if (this.onChanged) {
+                this.onChanged();
+            }
+            if (this.forceRefresh) {
+                cleanupUi();
+                initializeUi();
+            }
+        };
+        const reset = document.createElement('button');
+        paramDiv.appendChild(reset);
+        reset.innerHTML = '<i class="fas fa-undo"></i>'
+        reset.onclick = () => {
+            getJson()[key] = defaultValue;
+            select.value = defaultValue;
+            console.log(key + " reset.onclick " + select.value);
+            if (this.onChanged) {
+                this.onChanged();
+            }
+            if (this.forceRefresh) {
+                cleanupUi();
+                initializeUi();
+            }
+        };
+    }
 }
+
+const preset = new StringParameter({ values: presets, index: 0, onChanged: () => { onPresetChanged(); } });
 
 const paramInitializer = {
 
-    preset: new StringParameter({ values: presets, index: 0, onChanged: () => { onPresetChanged(); } }),
     simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true }),
     particle: new StringParameter({ values: particles, index: 0, forceRefresh: true }),
     blend_mode: new StringParameter({ values: blend_modes, index: 0 }),
@@ -107,7 +190,8 @@ function cleanupUi() {
 function addParamsToUi(getJson, getInit) {
 
     for (let key in getInit()) {
-        if (typeof getInit()[key] === "boolean") {
+        const init = getInit()[key];
+        if (typeof init === "boolean") {
             const paramDiv = document.createElement('div');
             paramDiv.innerText = key;
             paramDiv.style = "font-size: xx-small"
@@ -130,89 +214,8 @@ function addParamsToUi(getJson, getInit) {
             paramDiv.appendChild(reset);
             paramsContainer.appendChild(paramDiv);
         }
-        else if (getInit()[key] instanceof NumParameter) {
-            const paramDiv = document.createElement('div');
-            paramsContainer.appendChild(paramDiv);
-            paramDiv.innerText = key;
-            paramDiv.style = "font-size: xx-small"
-            const slider = document.createElement('input');
-            paramDiv.appendChild(slider);
-            const numInputBox = document.createElement('input');
-            paramDiv.appendChild(numInputBox);
-            const reset = document.createElement('button');
-            paramDiv.appendChild(reset);
-
-            const init = getInit()[key];
-            slider.type = 'range';
-            slider.min = init.min;
-            slider.max = init.max;
-            slider.step = init.step;
-            slider.value = getJson()[key];
-            slider.oninput = () => {
-                getJson()[key] = slider.value;
-                numInputBox.value = slider.value;
-                console.log(key + " slider.oninput " + slider.value);
-            };
-            numInputBox.type = 'number';
-            numInputBox.value = getJson()[key];
-            numInputBox.style = "width:60px"
-            numInputBox.oninput = () => {
-                getJson()[key] = numInputBox.value;
-                slider.value = numInputBox.value;
-                console.log(key + " numInputBox.oninput " + numInputBox.value);
-            };
-            const defaultValue = getJson()[key];
-            reset.innerHTML = '<i class="fas fa-undo"></i>'
-            reset.onclick = () => {
-                numInputBox.value = defaultValue;
-                slider.value = defaultValue;
-                getJson()[key] = defaultValue;
-                console.log("reset.onclick " + numInputBox.value);
-            };
-        }
-        else if (getInit()[key] instanceof StringParameter) {
-            const paramDiv = document.createElement('div');
-            paramsContainer.appendChild(paramDiv);
-            paramDiv.innerText = key;
-            paramDiv.style = "font-size: xx-small"
-            const select = document.createElement('select');
-            paramDiv.appendChild(select);
-            const defaultValue = getJson()[key];
-
-            const init = getInit()[key];
-            for (let optionText of init.values) {
-                let option = document.createElement("option");
-                option.value = optionText;
-                option.text = optionText;
-                select.appendChild(option);
-            }
-            select.value = defaultValue;
-            select.onchange = () => {
-                getJson()[key] = select.value;
-                console.log(key + " select.onchange " + select.value);
-                if (init.onChanged) {
-                    init.onChanged();
-                }
-                if (init.forceRefresh) {
-                    cleanupUi();
-                    initializeUi();
-                }
-            };
-            const reset = document.createElement('button');
-            paramDiv.appendChild(reset);
-            reset.innerHTML = '<i class="fas fa-undo"></i>'
-            reset.onclick = () => {
-                getJson()[key] = defaultValue;
-                select.value = defaultValue;
-                console.log(key + " reset.onclick " + select.value);
-                if (init.onChanged) {
-                    init.onChanged();
-                }
-                if (init.forceRefresh) {
-                    cleanupUi();
-                    initializeUi();
-                }
-            };
+        else if (init.addToUi) {
+            init.addToUi(getJson, getInit, key, paramsContainer);
         }
         else if (getInit()[key] instanceof Object) {
             let skip = true;
@@ -315,5 +318,6 @@ export {
     handleParameters,
     simulations,
     particles,
-    blend_modes
+    blend_modes,
+    onPresetChanged
 }

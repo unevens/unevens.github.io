@@ -47,16 +47,13 @@
       <div class="collapse navbar-collapse" id="navbarResponsive">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="graphics.html">Graphics</a>
+            <a class="nav-link js-scroll-trigger" href="zenbox.html">ZenBox</a>
           </li>
           <li class="nav-item">
             <a class="nav-link js-scroll-trigger" href="audio.html">Audio</a>
           </li>
           <li class="nav-item">
             <a class="nav-link js-scroll-trigger" href="music.html">Music</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="about.html">About</a>
           </li>
         </ul>
       </div>
@@ -100,7 +97,11 @@
   <script src="vendor/scrollreveal/scrollreveal.min.js"></script>
   <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
 
-  <script type="module" src="./gl/particles.js"></script>
+  <script type="module">
+    import { start, setPreset } from "./gl/particles.js";
+    setPreset("additive_dark");
+    start();
+  </script>
 </body>
 
 </html>

@@ -15,7 +15,7 @@ class NumParameter {
         this.step = options.step || 0.001;
     }
 
-    addToUi(getJson, getInit, key, container) {
+    addToUi(getJson, key, container) {
         const paramDiv = document.createElement('div');
         container.appendChild(paramDiv);
         paramDiv.innerText = key;
@@ -63,7 +63,7 @@ class StringParameter {
         this.forceRefresh = options.forceRefresh || false;
         this.onChanged = options.onChanged || null;
     }
-    addToUi(getJson, getInit, key, container) {
+    addToUi(getJson, key, container) {
         const paramDiv = document.createElement('div');
         container.appendChild(paramDiv);
         paramDiv.innerText = key;
@@ -215,7 +215,7 @@ function addParamsToUi(getJson, getInit) {
             paramsContainer.appendChild(paramDiv);
         }
         else if (init.addToUi) {
-            init.addToUi(getJson, getInit, key, paramsContainer);
+            init.addToUi(getJson, key, paramsContainer);
         }
         else if (getInit()[key] instanceof Object) {
             let skip = true;

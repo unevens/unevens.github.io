@@ -263,6 +263,10 @@ function applyParams(newParams) {
 function loaded(evt) {
     const newParams = JSON.parse(evt.target.result);
     applyParams(newParams);
+    currentTheme = "";
+    if (themeSelect) {
+        themeSelect.value = "";
+    }
 }
 
 function errorHandler(evt) {
@@ -313,6 +317,9 @@ function createUi(paramGetter, paramSetter) {
 }
 
 function setTheme(theme) {
+    if (theme == "") {
+        return;
+    }
     const url = "../themes/" + theme + ".json";
     try {
         fetch(url).then((response) => {

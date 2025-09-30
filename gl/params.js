@@ -1,8 +1,8 @@
-const themes = ["index","neon_01", "festival-starfield", "additive_dark"];
+const themes = ["index", "neon_01", "festival-starfield", "additive_dark"];
 const simulations = ["single_attractor", "twin_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
-const interactions = ["follow_mouse", "on_click", "random_walk"];
+const interactions = ["random_walk", "on_click", "follow_mouse"];
 
 let setParams = () => { };
 let getParams = () => { };
@@ -115,6 +115,8 @@ const paramInitializer = {
     particleHeight: new NumParameter({ min: .01, max: .2, value: 0.05, step: 0.001 }),
     particleAspectRatio: new NumParameter({ min: .1, max: 10, value: 1 }),
     sideThreshold: new NumParameter({ min: .1, max: 10, value: 1 }),
+    interactionStartX: new NumParameter({ min: 0, max: 1, value: .5 }),
+    interactionStartY: new NumParameter({ min: 0, max: 1, value: 0 }),
 
     twin_attractor: {
         attractToTwin: new NumParameter({ min: -1, max: 1, value: -0.005 }),
@@ -131,7 +133,7 @@ const paramInitializer = {
         sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
         hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
         touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
-        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 200.0, value: 80.0 }),
     },
     single_attractor: {
         attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.005 }),

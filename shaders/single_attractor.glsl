@@ -78,7 +78,7 @@ void main() {
         velocity.y = mix(velocity.y, hardSpeed, hardSide);
         #endif
     }
-    vec2 noize = noiz(position);
+    vec2 noize = noiz(position + v_uv);
     vec2 noizeVec = (2.0 * noize - 1.0) * noizForce;
     if (pToADist <= touchObstacleRadius) {
         vec2 escapeDirection = -pToA * invDist;

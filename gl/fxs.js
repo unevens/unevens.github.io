@@ -64,8 +64,13 @@ function setUpdateMouseOnlyOnClick(value) {
   updateMouseOnlyOnClick = value;
 }
 
-function isMouseDown(){
+function isMouseDown() {
   return mouseDown;
+}
+
+function setMousePosition(x, y) {
+  mouse[0] = mouse[2] = x;
+  mouse[1] = mouse[3] = y;
 }
 
 function handleMouseMove(event) {
@@ -633,5 +638,6 @@ export {
   Bloom,
   setUpdateMouseOnlyOnClick,
   isMouseDown,
+  setMousePosition,
   texImage2D
 };

@@ -92,7 +92,13 @@ function initializeParticles() {
     noizSeed: [Math.sin(performance.now()), Math.cos(performance.now())],
   });
   fxs.quadVAO.draw();
+  fxs.setMousePosition(params.interactionStartX, params.interactionStartY);
 }
+
+const refresh = document.getElementById("refresh");
+refresh.onclick = () => {
+  initializeParticles();
+};
 
 ///// DRAWING
 const fbos = [];

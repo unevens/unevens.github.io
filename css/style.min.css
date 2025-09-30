@@ -433,6 +433,7 @@ body {
   z-index: 1;
   font-size: small;
   color: rgb(61, 61, 61);
+  vertical-align: middle;
 }
 
 .ctrls-toggle:hover {

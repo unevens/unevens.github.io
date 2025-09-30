@@ -23,17 +23,15 @@
         "hardSide": 0.05
     },
     "single_attractor": {
-        "attractToTouch": "0.022",
-        "attractToTouchPower": "3.886",
-        "maxForce": "0.393",
-        "dragCoef": "1.338",
+        "attractToTouch": 0.005,
+        "attractToTouchPower": 4,
+        "maxForce": 0.25,
+        "dragCoef": 1,
         "noizForce": 0.8,
         "pulseCoef": 0.1,
         "pulseFreq": 0.1,
         "sideForce": 1.5,
-        "hardSide": 0.05,
-        "touchObstacleRadius": "0.012",
-        "touchObstacleRepulsion": "6.423"
+        "hardSide": 0.05
     },
     "sticky_starlight": {
         "hueVariation": 0.025,

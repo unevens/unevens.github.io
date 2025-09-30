@@ -1,4 +1,4 @@
-const themes = ["index", "festival-starfield", "additive_dark"];
+const themes = ["index","neon_01", "festival-starfield", "additive_dark"];
 const simulations = ["single_attractor", "twin_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
@@ -16,7 +16,6 @@ class NumParameter {
     }
 
     addToUi(getJson, key, paramDiv) {
-        const jsonValue = getJson()[key] || this.value;
         paramDiv.innerText = key;
         paramDiv.style = "font-size: xx-small"
         const slider = document.createElement('input');
@@ -30,26 +29,26 @@ class NumParameter {
         slider.min = this.min;
         slider.max = this.max;
         slider.step = this.step;
-        slider.value = jsonValue;
+        slider.value = getJson()[key];
         slider.oninput = () => {
-            jsonValue = slider.value;
+            getJson()[key] = slider.value;
             numInputBox.value = slider.value;
             console.log(key + " slider.oninput " + slider.value);
         };
         numInputBox.type = 'number';
-        numInputBox.value = jsonValue;
+        numInputBox.value = getJson()[key];
         numInputBox.style = "width:60px"
         numInputBox.oninput = () => {
-            jsonValue = numInputBox.value;
+            getJson()[key] = numInputBox.value;
             slider.value = numInputBox.value;
             console.log(key + " numInputBox.oninput " + numInputBox.value);
         };
-        const defaultValue = jsonValue;
+        const defaultValue = getJson()[key];
         reset.innerHTML = '<i class="fas fa-undo"></i>'
         reset.onclick = () => {
             numInputBox.value = defaultValue;
             slider.value = defaultValue;
-            jsonValue = defaultValue;
+            getJson()[key] = defaultValue;
             console.log("reset.onclick " + numInputBox.value);
         };
     }
@@ -63,21 +62,20 @@ class StringParameter {
         this.onChanged = options.onChanged || null;
     }
     addToUi(getJson, key, paramDiv) {
-        const jsonValue = getJson()[key] || this.value;
         paramDiv.innerText = key;
         paramDiv.style = "font-size: xx-small"
         const select = document.createElement('select');
         paramDiv.appendChild(select);
-        console.log("adding select for " + key + " with default " + jsonValue)
+        console.log("adding select for " + key + " with default " + getJson()[key])
         for (let optionText of this.values) {
             let option = document.createElement("option");
             option.value = optionText;
             option.text = optionText;
             select.appendChild(option);
         }
-        select.value = jsonValue;
+        select.value = getJson()[key];
         select.onchange = () => {
-            jsonValue = select.value;
+            getJson()[key] = select.value;
             console.log(key + " select.onchange " + select.value);
             if (this.onChanged) {
                 this.onChanged();
@@ -90,9 +88,10 @@ class StringParameter {
         const reset = document.createElement('button');
         paramDiv.appendChild(reset);
         reset.innerHTML = '<i class="fas fa-undo"></i>'
+        const defaultValue = getJson()[key];
         reset.onclick = () => {
-            jsonValue = jsonValue;
-            select.value = jsonValue;
+            getJson()[key] = defaultValue;
+            select.value = defaultValue;
             console.log(key + " reset.onclick " + select.value);
             if (this.onChanged) {
                 this.onChanged();
@@ -131,6 +130,8 @@ const paramInitializer = {
         pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
         sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
         hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
+        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
     },
     single_attractor: {
         attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.005 }),
@@ -142,6 +143,8 @@ const paramInitializer = {
         pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
         sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
         hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
+        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
     },
     sticky_starlight: {
         hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
@@ -198,12 +201,12 @@ function cleanupUi() {
     }
 }
 
-function addParamsToUi(getJson, getInit, skipUi) {
-    skipUi = skipUi || false;
+function addParamsToUi(getJson, getInit) {
     for (let key in getInit()) {
         const init = getInit()[key];
         if (typeof init === "boolean") {
             const jsonValue = getJson()[key] || init;
+            getJson()[key] = getJson()[key] || jsonValue;
             const paramDiv = document.createElement('div');
             paramDiv.innerText = key;
             paramDiv.style = "font-size: xx-small"
@@ -231,10 +234,12 @@ function addParamsToUi(getJson, getInit, skipUi) {
             init.addToUi(getJson, key, paramDiv);
         }
         else if (getInit()[key] instanceof Object) {
-            console.log("keyyy "+key );
             let skip = true;
             if (key == 'bloom' || key == getJson()["particle"] || key == getJson()["simulation"])
                 skip = false;
+            console.log("skip? " + key + " = " + skip);
+            if (skip)
+                continue;
             const titleDiv = document.createElement('div');
             titleDiv.innerText = key;
             titleDiv.style = "font-weight: bold"
@@ -242,7 +247,7 @@ function addParamsToUi(getJson, getInit, skipUi) {
             const jsonValue = getJson()[key] || {};
             const getSubObj = () => { return jsonValue; }
             const getSubInit = () => { return getInit()[key]; }
-            addParamsToUi(getSubObj, getSubInit, skip); //yes, yes, this is bad
+            addParamsToUi(getSubObj, getSubInit); //yes, yes, this is bad
         }
     }
 }
@@ -269,8 +274,24 @@ function readTextFile(readFile) {
     reader.onerror = errorHandler;
 }
 
+function overrideObj(src, dst) {
+    for (let key in dst) {
+        if (!src[key])
+            continue;
+        if (dst[key] instanceof Object) {
+            if (src[key] instanceof Object) {
+                overrideObj(src[key], dst[key]);
+            } else {
+                dst[key] = src[key];
+            }
+        } else {
+            dst[key] = src[key];
+        }
+    }
+}
+
 function applyParams(newParams) {
-    setParams(newParams);
+    overrideObj(newParams, getParams())
     console.log(newParams);
     cleanupUi();
     initializeUi();

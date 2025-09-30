@@ -23,6 +23,8 @@ uniform float pulseCoef;
 uniform float time;
 uniform float sideForce;
 uniform float hardSide;
+uniform float touchObstacleRadius;
+uniform float touchObstacleRepulsion;
 
 highp float random(vec2 co) {
     highp float a = 12.9898;
@@ -43,48 +45,75 @@ void main() {
     vec2 position = state.xy;
     vec2 velocity = state.zw;
     vec2 pToA = attractor.xy - position;
-    float invDist2 = 1.0 / dot(pToA, pToA);
-    vec2 acc = attractToTouch * pToA * pow(invDist2, 0.5 + 0.5 * attractToTouchPower);
+    float pToADist = length(pToA);
+    float invDist = 1.0 / pToADist;
+    vec2 acc = attractToTouch * pToA * pow(invDist, 1.0 + 1.0 * attractToTouchPower);
     float velMag = length(velocity);
     vec2 drag = -velocity * velMag * dragCoef;
     acc += drag;
     acc = min(abs(acc), maxForce) * sign(acc);
     vec2 relPos = 2.0 * position - 1.0;
     vec2 absPos = abs(relPos);
-    if(absPos.x > sideThresh.x) {
-#if (PERIODIC==1)
+    if (absPos.x > sideThresh.x) {
+        #if (PERIODIC==1)
         position.x = 0.5 * (1.0 - relPos.x);
-#else
+        #else
         float dir = sign(-relPos.x);
         float soft = acc.x + sideForce * dir;
         float hard = abs(acc.x) * dir;
         acc.x = mix(soft, hard, hardSide);
         float hardSpeed = abs(velocity.x) * dir;
         velocity.x = mix(velocity.x, hardSpeed, hardSide);
-#endif
+        #endif
     }
-    if(absPos.y > sideThresh.y) {
-#if (PERIODIC==1)
+    if (absPos.y > sideThresh.y) {
+        #if (PERIODIC==1)
         position.y = 0.5 * (1.0 - relPos.y);
-#else
+        #else
         float dir = sign(-relPos.y);
         float soft = acc.y + sideForce * dir;
         float hard = abs(acc.y) * dir;
         acc.y = mix(soft, hard, hardSide);
         float hardSpeed = abs(velocity.y) * dir;
         velocity.y = mix(velocity.y, hardSpeed, hardSide);
-#endif
+        #endif
     }
     vec2 noize = noiz(position);
-    float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
-    vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
-    float pulseAmp = sin(pulseFreq * time + idAngle);
-    pulseAmp *= pulseAmp;
-    vec2 pulse = pulseCoef * pulseAmp * pulseAmp * pulseDirection;
-    acc += (2.0 * noize - 1.0) * noizForce * (acc + pulse);
-    vec2 inc = 0.5 * acc * dt;
-    velocity += inc;
-    position += velocity * dt;
-    velocity += inc;
-    outputPacked = vec4(position, velocity);
+    vec2 noizeVec = (2.0 * noize - 1.0) * noizForce;
+    if (pToADist <= touchObstacleRadius) {
+        vec2 escapeDirection = -pToA * invDist;
+        position = attractor.xy + escapeDirection * touchObstacleRadius;
+        // if (velMag > 0.001) {
+        //     velocity = escapeDirection * velMag;
+        // } else {
+        vec2 inc = 0.5 * escapeDirection * touchObstacleRepulsion * dt;
+        velocity += inc;
+        position += velocity * dt;
+        velocity += inc;
+        // }
+    } else {
+
+        if (velMag < 0.00001) {
+            velocity = noizeVec * maxForce * dt;
+        }
+
+        float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
+        vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
+        float pulseAmp = sin(pulseFreq * time + idAngle);
+        pulseAmp *= pulseAmp;
+        vec2 pulse = pulseCoef * pulseAmp * pulseAmp * pulseDirection;
+        acc += noizeVec * ( acc + pulse ) ;
+        vec2 inc = 0.5 * acc * dt;
+        velocity += inc;
+        position += velocity * dt;
+        velocity += inc;
+
+
+
+    } 
+
+
+
+
+outputPacked = vec4(position, velocity);
 }

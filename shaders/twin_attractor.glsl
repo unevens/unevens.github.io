@@ -27,6 +27,7 @@ uniform float twinChangePeriod;
 uniform float attractToTwin;
 uniform float attractToTwinPower;
 uniform float attractTwinByVelocity;
+uniform float touchObstacleRadius;
 
 highp float random(vec2 co) {
     highp float a = 12.9898;
@@ -61,8 +62,9 @@ void main() {
     vec2 velocityB = stateB.zw;
     
     vec2 pToA = attractor.xy - position;
-    float invDist2 = 1.0 / dot(pToA, pToA);
-    vec2 acc = attractToTouch * pToA * pow(invDist2, 0.5 + 0.5 * attractToTouchPower);
+    float pToADist =  length(pToA);
+    float invDist = 1.0 / pToADist;
+    vec2 acc = attractToTouch * pToA * pow(invDist, 1.0 + 1.0 * attractToTouchPower);
 
     vec2 pToB = positionB.xy - position;
     float invDist2B = 1.0 / dot(pToB, pToB);
@@ -113,6 +115,13 @@ void main() {
     vec2 inc = 0.5 * acc * dt;
     velocity += inc;
     position += velocity * dt;
+
+    if(pToADist < touchObstacleRadius){
+        vec2 escapeVector = -pToA * invDist;
+        position = attractor.xy + escapeVector * touchObstacleRadius;
+        velocity = escapeVector * length(velocity);
+    }
+
     velocity += inc;
     outputPacked = vec4(position, velocity);
 }

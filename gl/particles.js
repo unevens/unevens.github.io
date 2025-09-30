@@ -155,21 +155,32 @@ function onNewFrame(time, deltaTime) {
   }
 
   if (params.interaction == "random_walk") {
-    interactionPoint[0] = interactionPoint[0] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0);
-    interactionPoint[0] -= Math.floor(interactionPoint[0]);
-    if (interactionPoint[0] < 0.0) {
-      interactionPoint[0] += 1.0;
-    }
-    interactionPoint[1] = interactionPoint[1] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0);
-    interactionPoint[1] -= Math.floor(interactionPoint[1]);
-    if (interactionPoint[1] < 0.0) {
-      interactionPoint[1] += 1.0;
+    fxs.setUpdateMouseOnlyOnClick(true);
+    if (fxs.isMouseDown()) {
+      if (wideScreen) {
+        interactionPoint[0] = 0.5 + (fxs.mouse[0] - 0.5) * ratioXonY[1];
+        interactionPoint[1] = fxs.mouse[1];
+      } else {
+        interactionPoint[0] = fxs.mouse[0];
+        interactionPoint[1] = 0.5 + (fxs.mouse[1] - 0.5) * ratioYonX[0];
+      }
+    } else {
+      interactionPoint[0] = interactionPoint[0] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0);
+      interactionPoint[0] -= Math.floor(interactionPoint[0]);
+      if (interactionPoint[0] < 0.0) {
+        interactionPoint[0] += 1.0;
+      }
+      interactionPoint[1] = interactionPoint[1] + params.randomWalkSpeed * (2.0 * Math.random() - 1.0);
+      interactionPoint[1] -= Math.floor(interactionPoint[1]);
+      if (interactionPoint[1] < 0.0) {
+        interactionPoint[1] += 1.0;
+      }
     }
   } else {
     if (params.interaction == "follow_mouse") {
-      fxs.SetUpdateMouseOnlyOnClick(false);
+      fxs.setUpdateMouseOnlyOnClick(false);
     } else if (params.interaction == "on_click") {
-      fxs.SetUpdateMouseOnlyOnClick(true);
+      fxs.setUpdateMouseOnlyOnClick(true);
     }
     if (wideScreen) {
       interactionPoint[0] = 0.5 + (fxs.mouse[0] - 0.5) * ratioXonY[1];

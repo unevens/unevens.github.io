@@ -60,8 +60,12 @@ let prevFrameTime = inputTime;
 let mouseDown = false;
 let updateMouseOnlyOnClick = false;
 
-function SetUpdateMouseOnlyOnClick(value) {
+function setUpdateMouseOnlyOnClick(value) {
   updateMouseOnlyOnClick = value;
+}
+
+function isMouseDown(){
+  return mouseDown;
 }
 
 function handleMouseMove(event) {
@@ -627,6 +631,7 @@ export {
   setCanvasViewport,
   Program,
   Bloom,
-  SetUpdateMouseOnlyOnClick,
+  setUpdateMouseOnlyOnClick,
+  isMouseDown,
   texImage2D
 };

@@ -28,6 +28,7 @@ uniform float attractToTwin;
 uniform float attractToTwinPower;
 uniform float attractTwinByVelocity;
 uniform float touchObstacleRadius;
+uniform float touchObstacleRepulsion;
 
 highp float random(vec2 co) {
     highp float a = 12.9898;
@@ -103,25 +104,28 @@ void main() {
         velocity.y = mix(velocity.y, hardSpeed, hardSide);
 #endif
     }
-    
-    float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
-    vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
-    float pulseAmp = sin(pulseFreq * time + idAngle);
-    pulseAmp *= pulseAmp;
-    vec2 pulse = pulseCoef * pulseAmp * pulseAmp * pulseDirection;
-    vec2 noize = noiz(position);
-    acc += (2.0 * noize - 1.0) * noizForce * (acc + pulse);
-
-    vec2 inc = 0.5 * acc * dt;
-    velocity += inc;
-    position += velocity * dt;
-
-    if(pToADist < touchObstacleRadius){
-        vec2 escapeVector = -pToA * invDist;
-        position = attractor.xy + escapeVector * touchObstacleRadius;
-        velocity = escapeVector * length(velocity);
+        vec2 noize = noiz(position);
+    vec2 noizeVec = (2.0 * noize - 1.0) * noizForce;
+    if (pToADist <= touchObstacleRadius) {
+        vec2 escapeDirection = -pToA * invDist;
+        position = attractor.xy + escapeDirection * touchObstacleRadius;
+        vec2 inc = 0.5 * escapeDirection * touchObstacleRepulsion * dt;
+        velocity += inc;
+        position += velocity * dt;
+        velocity += inc;
+    } else {
+         if (velMag < 0.00001) {
+            velocity = noizeVec * maxForce * dt;
+        }
+        float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
+        vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
+        float pulseAmp = sin(pulseFreq * time + idAngle);
+        pulseAmp *= pulseAmp;
+        vec2 pulse = pulseCoef * pulseAmp * pulseAmp * pulseDirection;
+        acc += noizeVec * ( acc + pulse ) ;
+        vec2 inc = 0.5 * acc * dt;
+        velocity += inc;
+        position += velocity * dt;
     }
-
-    velocity += inc;
     outputPacked = vec4(position, velocity);
 }

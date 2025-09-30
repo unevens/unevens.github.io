@@ -1,5 +1,5 @@
 const themes = ["index", "festival-starfield", "additive_dark"];
-const simulations = ["single_attractor"];
+const simulations = ["single_attractor", "twin_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["follow_mouse", "on_click", "random_walk"];
@@ -16,6 +16,7 @@ class NumParameter {
     }
 
     addToUi(getJson, key, paramDiv) {
+        const jsonValue = getJson()[key] || this.value;
         paramDiv.innerText = key;
         paramDiv.style = "font-size: xx-small"
         const slider = document.createElement('input');
@@ -29,26 +30,26 @@ class NumParameter {
         slider.min = this.min;
         slider.max = this.max;
         slider.step = this.step;
-        slider.value = getJson()[key];
+        slider.value = jsonValue;
         slider.oninput = () => {
-            getJson()[key] = slider.value;
+            jsonValue = slider.value;
             numInputBox.value = slider.value;
             console.log(key + " slider.oninput " + slider.value);
         };
         numInputBox.type = 'number';
-        numInputBox.value = getJson()[key];
+        numInputBox.value = jsonValue;
         numInputBox.style = "width:60px"
         numInputBox.oninput = () => {
-            getJson()[key] = numInputBox.value;
+            jsonValue = numInputBox.value;
             slider.value = numInputBox.value;
             console.log(key + " numInputBox.oninput " + numInputBox.value);
         };
-        const defaultValue = getJson()[key];
+        const defaultValue = jsonValue;
         reset.innerHTML = '<i class="fas fa-undo"></i>'
         reset.onclick = () => {
             numInputBox.value = defaultValue;
             slider.value = defaultValue;
-            getJson()[key] = defaultValue;
+            jsonValue = defaultValue;
             console.log("reset.onclick " + numInputBox.value);
         };
     }
@@ -62,21 +63,21 @@ class StringParameter {
         this.onChanged = options.onChanged || null;
     }
     addToUi(getJson, key, paramDiv) {
+        const jsonValue = getJson()[key] || this.value;
         paramDiv.innerText = key;
         paramDiv.style = "font-size: xx-small"
         const select = document.createElement('select');
         paramDiv.appendChild(select);
-        const defaultValue = getJson()[key];
-        console.log("adding select for " + key + " with default " + defaultValue)
+        console.log("adding select for " + key + " with default " + jsonValue)
         for (let optionText of this.values) {
             let option = document.createElement("option");
             option.value = optionText;
             option.text = optionText;
             select.appendChild(option);
         }
-        select.value = defaultValue;
+        select.value = jsonValue;
         select.onchange = () => {
-            getJson()[key] = select.value;
+            jsonValue = select.value;
             console.log(key + " select.onchange " + select.value);
             if (this.onChanged) {
                 this.onChanged();
@@ -90,8 +91,8 @@ class StringParameter {
         paramDiv.appendChild(reset);
         reset.innerHTML = '<i class="fas fa-undo"></i>'
         reset.onclick = () => {
-            getJson()[key] = defaultValue;
-            select.value = defaultValue;
+            jsonValue = jsonValue;
+            select.value = jsonValue;
             console.log(key + " reset.onclick " + select.value);
             if (this.onChanged) {
                 this.onChanged();
@@ -103,7 +104,6 @@ class StringParameter {
         };
     }
 }
-
 
 const paramInitializer = {
 
@@ -117,9 +117,13 @@ const paramInitializer = {
     particleAspectRatio: new NumParameter({ min: .1, max: 10, value: 1 }),
     sideThreshold: new NumParameter({ min: .1, max: 10, value: 1 }),
 
-    single_attractor: {
-        forceCoef: new NumParameter({ min: 0, max: .1, value: 0.005 }),
-        forcePow: new NumParameter({ min: .2, max: 16, value: 4.0 }),
+    twin_attractor: {
+        attractToTwin: new NumParameter({ min: -1, max: 1, value: -0.005 }),
+        attractToTwinPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
+        attractTwinByVelocity: new NumParameter({ min: 0.0, max: 1, value: 0.0 }),
+        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.0 }),
+        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
+        twinChangePeriod: new NumParameter({ min: 0, max: 100, value: 4.0 }),
         maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
         dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
         noizForce: new NumParameter({ min: .0, max: 4, value: .8 }),
@@ -128,7 +132,17 @@ const paramInitializer = {
         sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
         hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
     },
-
+    single_attractor: {
+        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.005 }),
+        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
+        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
+        dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
+        noizForce: new NumParameter({ min: .0, max: 4, value: .8 }),
+        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1 }),
+        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
+        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
+        hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
+    },
     sticky_starlight: {
         hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
         hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
@@ -184,10 +198,12 @@ function cleanupUi() {
     }
 }
 
-function addParamsToUi(getJson, getInit) {
+function addParamsToUi(getJson, getInit, skipUi) {
+    skipUi = skipUi || false;
     for (let key in getInit()) {
         const init = getInit()[key];
         if (typeof init === "boolean") {
+            const jsonValue = getJson()[key] || init;
             const paramDiv = document.createElement('div');
             paramDiv.innerText = key;
             paramDiv.style = "font-size: xx-small"
@@ -199,12 +215,11 @@ function addParamsToUi(getJson, getInit) {
                 console.log(key + " numInputBox.oninput " + numInputBox.value);
             };
             paramDiv.appendChild(numInputBox);
-            const defaultValue = getJson()[key];
             const reset = document.createElement('button');
             reset.innerHTML = '<i class="fas fa-undo"></i>'
             reset.onclick = () => {
-                numInputBox.value = defaultValue;
-                getJson()[key] = defaultValue;
+                numInputBox.value = jsonValue;
+                getJson()[key] = jsonValue;
                 console.log("reset.onclick " + numInputBox.value);
             };
             paramDiv.appendChild(reset);
@@ -216,18 +231,18 @@ function addParamsToUi(getJson, getInit) {
             init.addToUi(getJson, key, paramDiv);
         }
         else if (getInit()[key] instanceof Object) {
+            console.log("keyyy "+key );
             let skip = true;
             if (key == 'bloom' || key == getJson()["particle"] || key == getJson()["simulation"])
                 skip = false;
-            if (skip)
-                continue;
             const titleDiv = document.createElement('div');
             titleDiv.innerText = key;
             titleDiv.style = "font-weight: bold"
             paramsContainer.appendChild(titleDiv);
-            const getSubObj = () => { return getJson()[key]; }
+            const jsonValue = getJson()[key] || {};
+            const getSubObj = () => { return jsonValue; }
             const getSubInit = () => { return getInit()[key]; }
-            addParamsToUi(getSubObj, getSubInit); //yes, yes, this is bad
+            addParamsToUi(getSubObj, getSubInit, skip); //yes, yes, this is bad
         }
     }
 }
@@ -244,6 +259,7 @@ function downloadParams(obj) {
 
 function initializeUi() {
     addParamsToUi(() => getParams(), () => paramInitializer);
+    console.log("init params", getParams());
 }
 
 function readTextFile(readFile) {

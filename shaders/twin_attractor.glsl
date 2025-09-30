@@ -23,6 +23,10 @@ uniform float pulseCoef;
 uniform float time;
 uniform float sideForce;
 uniform float hardSide;
+uniform float twinChangePeriod;
+uniform float attractToTwin;
+uniform float attractToTwinPower;
+uniform float attractTwinByVelocity;
 
 highp float random(vec2 co) {
     highp float a = 12.9898;
@@ -36,19 +40,41 @@ highp float random(vec2 co) {
 vec2 noiz(vec2 uv) {
     return vec2(random(uv), random(uv + vec2(1.76565, -1.97465)));
 }
+vec2 noiz2(vec2 uv, vec2 offset) {
+    uv*=.7;
+    return vec2(random(uv-offset), random(uv + vec2(-1.375547, 1.145436)+offset));
+}
 
 void main() {
-    ivec2 texel = ivec2(floor(v_uv * viewportSize.xy));
-    vec4 state = texelFetch(stateTexture, texel, 0);
+    vec2 texel = floor(v_uv * viewportSize.xy);
+    vec4 state = texelFetch(stateTexture, ivec2(texel), 0);
     vec2 position = state.xy;
     vec2 velocity = state.zw;
+    float numParticles = viewportSize.x * viewportSize.y;
+
+    float phase = texel.x + viewportSize.x*texel.y;
+    float twinOffset = mod(floor((time + phase)*numParticles/twinChangePeriod),numParticles)/(numParticles+phase);
+    vec2 noizeUv = noiz(v_uv+twinOffset);
+    vec2 texel2 = mod(texel+floor(noizeUv*viewportSize.xy),viewportSize.xy);
+    vec4 stateB =  texelFetch(stateTexture, ivec2(texel2), 0);
+    vec2 positionB = stateB.xy;
+    vec2 velocityB = stateB.zw;
+    
     vec2 pToA = attractor.xy - position;
     float invDist2 = 1.0 / dot(pToA, pToA);
     vec2 acc = attractToTouch * pToA * pow(invDist2, 0.5 + 0.5 * attractToTouchPower);
+
+    vec2 pToB = positionB.xy - position;
+    float invDist2B = 1.0 / dot(pToB, pToB);
+    vec2 accB = attractToTwin * pToA * pow(invDist2B, 0.5 + 0.5 * attractToTwinPower);
+    accB *= mix(vec2(1.0), velocityB, attractTwinByVelocity);
+    acc += accB;
+
     float velMag = length(velocity);
     vec2 drag = -velocity * velMag * dragCoef;
     acc += drag;
     acc = min(abs(acc), maxForce) * sign(acc);
+
     vec2 relPos = 2.0 * position - 1.0;
     vec2 absPos = abs(relPos);
     if(absPos.x > sideThresh.x) {
@@ -75,13 +101,15 @@ void main() {
         velocity.y = mix(velocity.y, hardSpeed, hardSide);
 #endif
     }
-    vec2 noize = noiz(position);
+    
     float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
     vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
     float pulseAmp = sin(pulseFreq * time + idAngle);
     pulseAmp *= pulseAmp;
     vec2 pulse = pulseCoef * pulseAmp * pulseAmp * pulseDirection;
+    vec2 noize = noiz(position);
     acc += (2.0 * noize - 1.0) * noizForce * (acc + pulse);
+
     vec2 inc = 0.5 * acc * dt;
     velocity += inc;
     position += velocity * dt;

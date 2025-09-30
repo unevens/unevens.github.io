@@ -188,6 +188,7 @@ function onNewFrame(time, deltaTime) {
   simulationProgram.bind();
   simulationProgram.setUniforms({
     stateTexture: simBuffers[0].textures[0],
+    viewportSize: simBuffers[1].size,
     attractor: interactionPoint,
     dt: deltaTime,
     time,

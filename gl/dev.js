@@ -20,8 +20,8 @@ let params = {
   resolutionCoef: 1.0,
 
   gravity_params: {
-    forceCoef: 0.005,
-    forcePow: 4.0,
+    attractToTouch: 0.005,
+    attractToTouchPower: 4.0,
     maxForce: 0.25,
     dragCoef: 1.0,
     noizForce: 0.8,

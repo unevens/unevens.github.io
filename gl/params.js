@@ -1,4 +1,4 @@
-const themes = ["index", "neon_01", "festival-starfield", "additive_dark"];
+const themes = ["neon_hole", "index", "neon_01", "festival-starfield", "additive_dark"];
 const simulations = ["single_attractor", "twin_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
@@ -355,6 +355,11 @@ function createUi(paramGetter, paramSetter) {
 
 }
 
+let onSetTheme = () => { };
+function SetOnSetThemeDelegate(f) {
+    onSetTheme = f;
+}
+
 function setTheme(theme) {
     if (theme == "") {
         return;
@@ -370,6 +375,7 @@ function setTheme(theme) {
                         if (themeSelect) {
                             themeSelect.value = theme;
                         }
+                        onSetTheme();
                     }
                 );
             }
@@ -388,5 +394,6 @@ export {
     simulations,
     particles,
     blend_modes,
-    setTheme
+    setTheme,
+    SetOnSetThemeDelegate
 }

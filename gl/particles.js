@@ -3,7 +3,7 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { createUi, simulations, particles, setTheme } from "./params.js";
+import { createUi, simulations, particles, setTheme, SetOnSetThemeDelegate } from "./params.js";
 const twgl = fxs.twgl;
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
@@ -131,12 +131,15 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-
+let hasStarted = false;
 
 function onStart() {
   fxs.quadVAO.bind();
   initializeParticles();
+  hasStarted = true;
 }
+
+SetOnSetThemeDelegate(() => { if (hasStarted) initializeParticles(); });
 
 function onNewFrame(time, deltaTime) {
   if (pause) {

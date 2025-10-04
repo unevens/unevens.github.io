@@ -30,6 +30,7 @@ uniform float flowSpeed;
 uniform float flowSpeedVariation;
 uniform float flowAngle;
 uniform float flowAngleVariation;
+uniform float numParticles;
 
 highp float random(vec2 co) {
     highp float a = 12.9898;
@@ -43,7 +44,10 @@ highp float random(vec2 co) {
 vec2 noiz(vec2 uv) {
     return vec2(random(uv), random(uv + vec2(1.76565, -1.97465)));
 }
-
+vec2 noiz2(vec2 uv, vec2 offset) {
+    uv*=.7;
+    return vec2(random(uv-offset), random(uv + vec2(-1.375547, 1.145436)+offset));
+}
 void main() {
     // particle state
     ivec2 texel = ivec2(floor(v_uv * viewportSize.xy));
@@ -90,6 +94,7 @@ void main() {
     // noise
     vec2 noize = noiz(position + v_uv);
     vec2 noizeVec = (2.0 * noize - 1.0) * noizForce;
+    vec2 noize2 = noiz2(v_uv, vec2(-.342,.653));
     // obstacle at interaction
     vec2 inc;
     if (pToADist <= touchObstacleRadius) {
@@ -100,7 +105,7 @@ void main() {
         if (velMag < 0.00001) {
             velocity = noizeVec * maxForce * dt;
         }
-        float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
+        float idAngle = 3.1416 * (v_uv.x*numParticles+v_uv.y)/numParticles;
         vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
         float pulseAmp = sin(pulseFreq * time + idAngle);
         pulseAmp *= pulseAmp;

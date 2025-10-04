@@ -213,6 +213,7 @@ function onNewFrame(time, deltaTime) {
     dt: deltaTime,
     time,
     sideThresh,
+    numParticles:numParticles()
   });
 
   const simParams = params[simulation];

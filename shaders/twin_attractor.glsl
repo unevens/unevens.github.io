@@ -108,6 +108,7 @@ void main() {
     // noise
     vec2 noize = noiz(position + v_uv);
     vec2 noizeVec = (2.0 * noize - 1.0) * noizForce;
+    vec2 noize2 = noiz2(v_uv, vec2(-.342,.653));
     // obstacle at interaction
     vec2 inc;
     if (pToADist <= touchObstacleRadius) {
@@ -118,7 +119,7 @@ void main() {
         if (velMag < 0.00001) {
             velocity = noizeVec * maxForce * dt;
         }
-        float idAngle = 3.1416 * (v_uv.x + v_uv.y + fract(time));
+        float idAngle = 3.1416 * (v_uv.x*numParticles+v_uv.y)/numParticles;
         vec2 pulseDirection = vec2(sin(idAngle), cos(idAngle));
         float pulseAmp = sin(pulseFreq * time + idAngle);
         pulseAmp *= pulseAmp;

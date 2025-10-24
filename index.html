@@ -35,7 +35,7 @@
 <body id="page-top">
   <canvas id="canvas" class="home-canvas"></canvas>
 
-      <!-- Navigation -->
+  <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
     <div class="container">
       <a class="navbar-brand js-scroll-trigger" href="index.html">unevens</a>
@@ -59,40 +59,40 @@
       </div>
     </div>
   </nav>
-<!-- page -->
-    <header class="masthead text-center text-white d-flex" id="page_head" style="background-color: #212529;">
-      <div class="container my-auto">
-        <div class="row">
-          <div class="col-lg-10 mx-auto">
-            <h1 class="sr-head">
-              <br />
-              <strong>Hello and Welcome </strong> 
-            </h1>
-            <hr />
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-lg-12 mx-auto sr-subhead">
-            <p class="text-faded mb-5">
-              Hi, I am Dario Mambro, Technical Artist and Software Engineer.
-              <br />
-              Welcome to my personal website. 
-              <br /><br />
-              Check out the <a class="text-faded-link" href="zenbox.html">ZenBox</a> for some trippy visual
-              experiences,
-              <br />
-              the <a class="text-faded-link" href="audio.html">audio page</a> for some open source audio plugins,
-              <br />
-              and the <a class="text-faded-link" href="music.html">music page</a> for some unusual vibes. <br /><br />
-              If you want to connect with me, you can find me on
-              <a class="text-faded-link" href="https://www.github.com/unevens">GitHub</a>,
-              <a class="text-faded-link" href="https://www.linkedin.com/in/dario-m89/">LinkedIn</a>,
-              <a class="text-faded-link" href="https://www.deviantart.com/unevens">DeviantArt</a>.
-            </p>
-          </div>
+  <!-- page -->
+  <header class="masthead text-center text-white d-flex" id="page_head" style="background-color: #212529;">
+    <div class="container my-auto">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+          <h1 class="sr-head">
+            <br />
+            <strong>Hello and Welcome </strong>
+          </h1>
+          <hr />
         </div>
       </div>
-    </header>
+      <div class="row">
+        <div class="col-lg-12 mx-auto sr-subhead">
+          <p class="text-faded mb-5">
+            Hi, I am Dario Mambro, Technical Artist and Software Engineer.
+            <br />
+            Welcome to my personal website.
+            <br /><br />
+            Check out the <a class="text-faded-link" href="zenbox.html">ZenBox</a> for some trippy visual
+            experiences,
+            <br />
+            the <a class="text-faded-link" href="audio.html">audio page</a> for some open source audio plugins,
+            <br />
+            and the <a class="text-faded-link" href="music.html">music page</a> for some unusual vibes. <br /><br />
+            If you want to connect with me, you can find me on
+            <a class="text-faded-link" href="https://www.github.com/unevens">GitHub</a>,
+            <a class="text-faded-link" href="https://www.linkedin.com/in/dario-m89/">LinkedIn</a>,
+            <a class="text-faded-link" href="https://www.deviantart.com/unevens">DeviantArt</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </header>
   <!-- <div style="min-height:100%"> -->
   <div>
     <div id="ctrls" hidden="true" style="overflow-y: auto; font-family: monospace;">
@@ -117,9 +117,10 @@
     </div>
 
     <div class="ui-head">
-      <i id="refresh" class="ctrls-toggle fa fa-refresh fa-2x" ></i>&nbsp;&nbsp;&nbsp;&nbsp;
-      ZenBox Theme:  &nbsp;<select id="zenbox-theme"> </select> &nbsp;&nbsp;
-      <i class="ctrls-toggle fa fa-edit fa-2x" onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
+      <i id="refresh" class="ctrls-toggle fa fa-refresh fa-2x"></i>&nbsp;&nbsp;&nbsp;&nbsp;
+      ZenBox Theme: &nbsp;<select id="zenbox-theme"> </select> &nbsp;&nbsp;
+      <i class="ctrls-toggle fa fa-edit fa-2x"
+        onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
     </div>
   </div>
 
@@ -135,9 +136,9 @@
   <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
 
   <script type="module">
-    import { start, setTheme } from "./gl/particles.js";
-    setTheme("index");
-    start();
+    import { createParticleScene } from "./gl/particles.js";
+    const scene = createParticleScene("index");
+    scene.start();
   </script>
 </body>
 

@@ -9,7 +9,7 @@
 
   <link rel="icon" type="image/png" href="img/favicon.png" />
 
-  <title>Graphics - unevens</title>
+  <title>ZenBox - unevens</title>
 
   <!-- Bootstrap core CSS -->
   <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
@@ -60,11 +60,11 @@
     </div>
   </nav>
 
-   <div style="min-height:100%">
+  <div style="min-height:100%">
     <div id="ctrls" hidden="true" style="overflow-y: auto; font-family: monospace;">
-      
+
       <div id="params"></div>
-      
+
       <div id="saveload">
         <button style="display:block;width:80px; height:30px;" onclick="document.getElementById('loadParams').click()">
           <i class="fas fa-folder-open"></i> Load
@@ -76,16 +76,17 @@
       </div>
 
       <div id="fps" style="font-size: xx-small" hidden="true">
-    
+
       </div>
 
 
     </div>
 
     <div class="ui-head">
-      <i id="refresh" class="ctrls-toggle fa fa-refresh fa-2x" ></i>&nbsp;&nbsp;&nbsp;&nbsp;
-      ZenBox Theme:  &nbsp;<select id="zenbox-theme"> </select> &nbsp;&nbsp;
-      <i class="ctrls-toggle fa fa-edit fa-2x" onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
+      <i id="refresh" class="ctrls-toggle fa fa-refresh fa-2x"></i>&nbsp;&nbsp;&nbsp;&nbsp;
+      ZenBox Theme: &nbsp;<select id="zenbox-theme"> </select> &nbsp;&nbsp;
+      <i class="ctrls-toggle fa fa-edit fa-2x"
+        onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
     </div>
   </div>
 
@@ -101,9 +102,9 @@
   <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
 
   <script type="module">
-    import { start, setTheme } from "./gl/particles.js";
-    setTheme("neon_hole");
-    start();
+    import { createParticleScene } from "./gl/particles.js";
+    const scene = createParticleScene("neon_hole");
+    scene.start();
   </script>
 </body>
 

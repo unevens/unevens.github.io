@@ -13,6 +13,8 @@ gl.getExtension("OES_texture_float_linear");
 
 //to-do check for gl failure, show message
 
+const fpsDiv = document.getElementById("fps");
+
 const isMobile = (function () {
   let check = false;
   (function (a) {
@@ -54,8 +56,13 @@ function getText(url) {
 }
 
 const mouse = Float32Array.from([0.5, 0.5, 0.5, 0.5]);
-let inputTime = performance.now();
-let prevFrameTime = inputTime;
+let prevFrameTime = performance.now();
+let timeDialated = prevFrameTime;
+let timeDialation = 1.0;
+
+function setTimeDialationCoef(value) {
+  timeDialation = value;
+}
 
 let mouseDown = false;
 let updateMouseOnlyOnClick = false;
@@ -226,10 +233,17 @@ function start(onStart, onNewFrame) {
         updateViewportSize();
         gl.viewport(0, 0, canvas.width, canvas.height);
         const maxDeltaTime = 60;
-        const deltaTime = Math.min(maxDeltaTime, time - prevFrameTime);
+        const deltaTime = time - prevFrameTime;
+        const deltaTimeClamped = Math.min(maxDeltaTime, deltaTime);
+        const deltaTimeDialated = timeDialation * deltaTime;
+        const deltaTimeDialatedClamped = Math.min(maxDeltaTime, deltaTimeDialated);
         prevFrameTime = time;
-        interpolateInput(deltaTime);
-        onNewFrame(time * 0.001, deltaTime * 0.001);
+        timeDialated += deltaTimeDialated;
+        interpolateInput(deltaTimeClamped);
+        onNewFrame(timeDialated * 0.001, deltaTimeDialatedClamped * 0.001);
+        if (fpsDiv && !fpsDiv.hidden) {
+          fpsDiv.innerText = "dt = " + deltaTime.toFixed(4) + "ms";
+        }
         requestAnimationFrame(render);
       }
       requestAnimationFrame(render);
@@ -435,6 +449,19 @@ const quadVAO = new VAO(
   Uint16Array.from([0, 1, 2, 2, 1, 3])
 );
 
+function copyTextureToFbo(srcTex, dstFbo) {
+  if (dstFbo) {
+    dstFbo.bind();
+  } else {
+    twgl.bindFramebufferInfo(gl, null);
+  }
+  copyProgram.bind();
+  copyProgram.setUniforms({
+    srcTexture: srcTex,
+  });
+  quadVAO.draw();
+}
+
 function binomialCoefficient(n, k) {
   if (k < 0 || k > n) {
     return 0;
@@ -585,16 +612,7 @@ class Bloom {
   }
 
   copyResultTo(dstFbo) {
-    if (dstFbo) {
-      dstFbo.bind();
-    } else {
-      twgl.bindFramebufferInfo(gl, null);
-    }
-    copyProgram.bind();
-    copyProgram.setUniforms({
-      srcTexture: this.buffers[0].textures[0],
-    });
-    quadVAO.draw();
+    copyTextureToFbo(this.buffers[0].textures[0], dstFbo);
   }
 
   addTo(src, dstFbo) {
@@ -639,5 +657,6 @@ export {
   setUpdateMouseOnlyOnClick,
   isMouseDown,
   setMousePosition,
-  texImage2D
+  texImage2D,
+  setTimeDialationCoef
 };

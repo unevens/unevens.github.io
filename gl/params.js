@@ -1,11 +1,22 @@
-const themes = ["neon_hole", "index", "neon_01", "festival-starfield", "additive_dark"];
+import * as fxs from "./fxs.js";
+const themeNames = ["neon_hole", "index"];
 const simulations = ["single_attractor", "twin_attractor"];
 const particles = ["sticky_starlight", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["random_walk", "on_click", "follow_mouse"];
 
-let setParams = () => { };
-let getParams = () => { };
+let getThemeData = () => { };
+let setThemeData = (data) => { };
+let currentLayer = 0;
+
+function getParams() {
+    const themeData = getThemeData();
+    return themeData.layers[currentLayer];
+}
+
+function setParams(params) {
+    getThemeData().layers[currentLayer] = params;
+}
 
 class NumParameter {
     constructor(options) {
@@ -13,6 +24,7 @@ class NumParameter {
         this.max = options.max;
         this.value = options.value;
         this.step = options.step || 0.001;
+        this.onChanged = options.onChanged || null;
     }
 
     addToUi(getJson, key, paramDiv) {
@@ -34,6 +46,9 @@ class NumParameter {
             getJson()[key] = slider.value;
             numInputBox.value = slider.value;
             console.log(key + " slider.oninput " + slider.value);
+            if (this.onChanged) {
+                this.onChanged(slider.value);
+            }
         };
         numInputBox.type = 'number';
         numInputBox.value = getJson()[key];
@@ -42,6 +57,9 @@ class NumParameter {
             getJson()[key] = numInputBox.value;
             slider.value = numInputBox.value;
             console.log(key + " numInputBox.oninput " + numInputBox.value);
+            if (this.onChanged) {
+                this.onChanged(numInputBox.value);
+            }
         };
         const defaultValue = getJson()[key];
         reset.innerHTML = '<i class="fas fa-undo"></i>'
@@ -50,6 +68,9 @@ class NumParameter {
             slider.value = defaultValue;
             getJson()[key] = defaultValue;
             console.log("reset.onclick " + numInputBox.value);
+            if (this.onChanged) {
+                this.onChanged(defaultValue);
+            }
         };
     }
 }
@@ -78,11 +99,11 @@ class StringParameter {
             getJson()[key] = select.value;
             console.log(key + " select.onchange " + select.value);
             if (this.onChanged) {
-                this.onChanged();
+                this.onChanged(select.value);
             }
             if (this.forceRefresh) {
                 cleanupUi();
-                initializeUi();
+                initializeUiFromParams();
             }
         };
         const reset = document.createElement('button');
@@ -94,11 +115,11 @@ class StringParameter {
             select.value = defaultValue;
             console.log(key + " reset.onclick " + select.value);
             if (this.onChanged) {
-                this.onChanged();
+                this.onChanged(defaultValue);
             }
             if (this.forceRefresh) {
                 cleanupUi();
-                initializeUi();
+                initializeUiFromParams();
             }
         };
     }
@@ -117,6 +138,8 @@ const paramInitializer = {
     sideThreshold: new NumParameter({ min: .1, max: 10, value: 1 }),
     interactionStartX: new NumParameter({ min: 0, max: 1, value: .5 }),
     interactionStartY: new NumParameter({ min: 0, max: 1, value: 0 }),
+    timeDialation: new NumParameter({ min: 0, max: 100, value: 1, onChanged: (value) => { fxs.setTimeDialationCoef(value); } }),
+    borderPolicy: new StringParameter({ values: ["wrap", "bounce"], index: 0 }),
 
     twin_attractor: {
         attractToTwin: new NumParameter({ min: -1, max: 1, value: -0.005 }),
@@ -148,6 +171,7 @@ const paramInitializer = {
         touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
         touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
     },
+
     sticky_starlight: {
         hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
         hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
@@ -195,7 +219,7 @@ function initParamObj(paramInit) {
 
 const paramsContainer = document.getElementById('params');
 let themeSelect;
-let currentTheme = themes[0];
+let currentThemeName = themeNames[0];
 
 function cleanupUi() {
     while (paramsContainer.firstChild) {
@@ -254,25 +278,31 @@ function addParamsToUi(getJson, getInit) {
     }
 }
 
-function downloadParams(obj) {
+function downloadJson(obj, name) {
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + JSON.stringify(obj));
-    element.setAttribute('download', "unevens_net.json");
+    element.setAttribute('download', name + ".json");
     element.style.display = 'none';
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
 }
 
-function initializeUi() {
-    addParamsToUi(() => getParams(), () => paramInitializer);
-    console.log("init params", getParams());
+function initializeUiFromParams() {
+    addParamsToUi(getParams, () => paramInitializer);
 }
 
-function readTextFile(readFile) {
+function readParamsFile(readFile) {
     var reader = new FileReader();
     reader.readAsText(readFile, "UTF-8");
-    reader.onload = loaded;
+    reader.onload = loadedParams;
+    reader.onerror = errorHandler;
+}
+
+function readThemeFile(readFile) {
+    var reader = new FileReader();
+    reader.readAsText(readFile, "UTF-8");
+    reader.onload = loadedTheme;
     reader.onerror = errorHandler;
 }
 
@@ -292,17 +322,32 @@ function overrideObj(src, dst) {
     }
 }
 
-function applyParams(newParams) {
+function applyLoadedParams(newParams) {
     overrideObj(newParams, getParams())
-    console.log(newParams);
     cleanupUi();
-    initializeUi();
+    initializeUiFromParams();
 }
 
-function loaded(evt) {
+function loadedParams(evt) {
     const newParams = JSON.parse(evt.target.result);
-    applyParams(newParams);
-    currentTheme = "";
+    applyLoadedParams(newParams);
+    currentThemeName = "";
+    if (themeSelect) {
+        themeSelect.value = "";
+    }
+}
+
+function setThemeDataAndUpdateUi(themeData) {
+    setThemeData(themeData);
+    currentLayer = Math.max(0, Math.min(currentLayer, themeData.layers.length - 1));
+    cleanupUi();
+    initializeUiFromParams();
+}
+
+function loadedTheme(evt) {
+    const newThemeData = JSON.parse(evt.target.result);
+    setThemeDataAndUpdateUi(newThemeData);
+    currentThemeName = "";
     if (themeSelect) {
         themeSelect.value = "";
     }
@@ -315,67 +360,39 @@ function errorHandler(evt) {
     alert("Failed to load file");
 }
 
+function registerThemeDataInterface(themeDataGetter, themeDataSetter) {
+    getThemeData = themeDataGetter;
+    setThemeData = themeDataSetter;
+}
 
-
-function createUi(paramGetter, paramSetter) {
-    getParams = paramGetter;
-    setParams = paramSetter;
+function createUi() {
     setParams(initParamObj(paramInitializer));
-    initializeUi();
-
-    const saveParams = document.getElementById('saveParams');
-    saveParams.onclick = () => {
-        downloadParams(getParams());
-    };
-
-    const loadParams = document.getElementById('loadParams');
-    loadParams.type = "file";
-    loadParams.innerText = "Load Configuration"
-    loadParams.accept = ".json"
-    loadParams.addEventListener("input", () => {
-        if (loadParams.files.length >= 1) {
-            console.log("File selected: ", loadParams.files[0]);
-            readTextFile(loadParams.files[0]);
-        }
-    });
-
-
-    themeSelect = document.getElementById('zenbox-theme');
-    for (let optionText of themes) {
-        let option = document.createElement("option");
-        option.value = optionText;
-        option.text = optionText;
-        themeSelect.appendChild(option);
-    }
-    themeSelect.value = currentTheme;
-    themeSelect.onchange = () => {
-        console.log("themeSelect .onchange " + themeSelect.value);
-        setTheme(themeSelect.value);
-    };
-
+    initializeUiFromParams();
 }
 
-let onSetTheme = () => { };
-function SetOnSetThemeDelegate(f) {
-    onSetTheme = f;
+let onThemeChanged = [];
+function addToOnThemeChangedDelegate(f) {
+    onThemeChanged.push(f);
 }
 
-function setTheme(theme) {
-    if (theme == "") {
+function setBuiltinTheme(themeName) {
+    if (themeName == "") {
         return;
     }
-    const url = "../themes/" + theme + ".json";
+    const url = "../themes/" + themeName + ".json";
     try {
         fetch(url).then((response) => {
             if (response.ok) {
                 response.json().then(
                     (themeData) => {
-                        applyParams(themeData);
-                        currentTheme = theme;
+                        setThemeDataAndUpdateUi(themeData);
+                        currentThemeName = themeName;
                         if (themeSelect) {
-                            themeSelect.value = theme;
+                            themeSelect.value = themeName;
                         }
-                        onSetTheme();
+                        for (let f of onThemeChanged) {
+                            f();
+                        }
                     }
                 );
             }
@@ -385,15 +402,70 @@ function setTheme(theme) {
     }
 }
 
+const saveParams = document.getElementById('saveParams');
+if (saveParams) {
+    saveParams.onclick = () => {
+        downloadJson(getParams(), "zenbox_layer");
+    };
+
+    const loadParams = document.getElementById('loadParams');
+    loadParams.type = "file";
+    loadParams.innerText = "Load Configuration"
+    loadParams.accept = ".json"
+    loadParams.addEventListener("input", () => {
+        if (loadParams.files.length >= 1) {
+            console.log("File selected: ", loadParams.files[0]);
+            readParamsFile(loadParams.files[0]);
+        }
+    });
+}
 
 
+
+const saveTheme = document.getElementById('saveTheme');
+if (saveTheme) {
+    saveTheme.onclick = () => {
+        downloadJson(getThemeData(), "zenbox_theme");
+    };
+}
+
+
+const loadTheme = document.getElementById('loadTheme');
+if (loadTheme) {
+    loadTheme.type = "file";
+    loadTheme.innerText = "Load Configuration"
+    loadTheme.accept = ".json"
+    loadTheme.addEventListener("input", () => {
+        if (loadTheme.files.length >= 1) {
+            console.log("File selected: ", loadTheme.files[0]);
+            readThemeFile(loadTheme.files[0]);
+        }
+    });
+}
+
+
+themeSelect = document.getElementById('zenbox-theme');
+if (themeSelect) {
+    for (let optionText of themeNames) {
+        let option = document.createElement("option");
+        option.value = optionText;
+        option.text = optionText;
+        themeSelect.appendChild(option);
+    }
+    themeSelect.value = currentThemeName;
+    themeSelect.onchange = () => {
+        console.log("themeSelect .onchange " + themeSelect.value);
+        setBuiltinTheme(themeSelect.value);
+    };
+}
 
 
 export {
-    createUi,
+    registerThemeDataInterface,
     simulations,
     particles,
     blend_modes,
-    setTheme,
-    SetOnSetThemeDelegate
+    setBuiltinTheme,
+    addToOnThemeChangedDelegate,
+    createUi
 }

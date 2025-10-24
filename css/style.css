@@ -432,7 +432,7 @@ body {
   position: fixed;
   z-index: 1;
   font-size: small;
-  color: rgb(61, 61, 61);
+  color: rgb(107, 107, 107);
   vertical-align: middle;
 }
 
@@ -450,7 +450,7 @@ body {
 .text_home_cpy {
   width: 100vw;
   background-color: transparent;
-  color: hsl(0, 0%, 33%);
+  color: rgb(57, 57, 57);
   font-size: 70%;
   margin-top: -40px;
   text-align: center;

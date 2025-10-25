@@ -100,12 +100,19 @@
       <div id="params"></div>
 
       <div id="saveload">
+        <button style="display:block;width:80px; height:30px;" onclick="document.getElementById('loadScene').click()">
+          <i class="fas fa-folder-open"></i> Load Scene
+        </button>
+        <input type='file' id="loadScene" style="display:none">
+        <button id="saveScene" style="display:block;width:80px; height:30px;">
+          <i class="fas fa-save"></i> Save Scene
+        </button>
         <button style="display:block;width:80px; height:30px;" onclick="document.getElementById('loadParams').click()">
-          <i class="fas fa-folder-open"></i> Load
+          <i class="fas fa-folder-open"></i> Load Layer
         </button>
         <input type='file' id="loadParams" style="display:none">
         <button id="saveParams" style="display:block;width:80px; height:30px;">
-          <i class="fas fa-save"></i> Save
+          <i class="fas fa-save"></i> Save Layer
         </button>
       </div>
 

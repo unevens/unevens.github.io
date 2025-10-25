@@ -1,7 +1,7 @@
 import * as fxs from "./fxs.js";
-const themeNames = ["neon_hole", "index"];
+const themeNames = ["neon_hole", "holy", "index"];
 const simulations = ["single_attractor", "twin_attractor"];
-const particles = ["sticky_starlight", "uvDebug"];
+const particles = ["sticky_starlight", "circle", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["random_walk", "on_click", "follow_mouse"];
 
@@ -189,6 +189,25 @@ const paramInitializer = {
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
     },
 
+    circle: {
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
+        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
+        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
+        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
+    },
+
     bloom: {
         numPasses: new NumParameter({ min: 0, max: 16, value: 4, step: 1 }),
         amount: new NumParameter({ min: 0., max: 8, value: 1.8 }),
@@ -322,6 +341,20 @@ function overrideObj(src, dst) {
     }
 }
 
+function initParams(params, init) {
+    for (let key in init) {
+        if (!params[key]) {
+            params[key] = init[key];
+        } else if (init[key] instanceof Object) {
+            if (params[key] instanceof Object) {
+                initParams(params[key], init[key]);
+            } else {
+                params[key] = init[key];
+            }
+        }
+    }
+}
+
 function applyLoadedParams(newParams) {
     overrideObj(newParams, getParams())
     cleanupUi();
@@ -338,6 +371,10 @@ function loadedParams(evt) {
 }
 
 function setThemeDataAndUpdateUi(themeData) {
+    const initializer = getInitializedParams();
+    for (let layer of themeData.layers) {
+        initParams(layer, initializer);
+    }
     setThemeData(themeData);
     currentLayer = Math.max(0, Math.min(currentLayer, themeData.layers.length - 1));
     cleanupUi();
@@ -365,9 +402,8 @@ function registerThemeDataInterface(themeDataGetter, themeDataSetter) {
     setThemeData = themeDataSetter;
 }
 
-function createUi() {
-    setParams(initParamObj(paramInitializer));
-    initializeUiFromParams();
+function getInitializedParams() {
+    return initParamObj(paramInitializer);
 }
 
 let onThemeChanged = [];
@@ -422,15 +458,15 @@ if (saveParams) {
 
 
 
-const saveTheme = document.getElementById('saveTheme');
+const saveTheme = document.getElementById('saveScene');
 if (saveTheme) {
     saveTheme.onclick = () => {
-        downloadJson(getThemeData(), "zenbox_theme");
+        downloadJson(getThemeData(), "zenbox_scene");
     };
 }
 
 
-const loadTheme = document.getElementById('loadTheme');
+const loadTheme = document.getElementById('loadScene');
 if (loadTheme) {
     loadTheme.type = "file";
     loadTheme.innerText = "Load Configuration"
@@ -467,5 +503,5 @@ export {
     blend_modes,
     setBuiltinTheme,
     addToOnThemeChangedDelegate,
-    createUi
+    getInitializedParams
 }

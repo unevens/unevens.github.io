@@ -66,6 +66,13 @@
       <div id="params"></div>
 
       <div id="saveload">
+        <button style="display:block;width:160px; height:30px;" onclick="document.getElementById('loadScene').click()">
+          <i class="fas fa-folder-open"></i> Load Scene
+        </button>
+        <input type='file' id="loadScene" style="display:none">
+        <button id="saveScene" style="display:block;width:160px; height:30px;">
+          <i class="fas fa-save"></i> Save Scene
+        </button>
         <button style="display:block;width:80px; height:30px;" onclick="document.getElementById('loadParams').click()">
           <i class="fas fa-folder-open"></i> Load
         </button>
@@ -103,7 +110,7 @@
 
   <script type="module">
     import { createParticleScene } from "./gl/particles.js";
-    const scene = createParticleScene("neon_hole");
+    const scene = createParticleScene("holy");
     scene.start();
   </script>
 </body>

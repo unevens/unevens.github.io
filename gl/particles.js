@@ -8,12 +8,14 @@ const gl = fxs.gl;
 const isMobile = fxs.isMobile;
 
 const particleVS = new fxs.Shader("particleQuad");
+const particleVelAlignedVS = new fxs.Shader("particleQuadVelAligned");
 const initSimFS = new fxs.Shader("initSim");
 const initSimProgram = new fxs.Program(fxs.screenVS, initSimFS);
 const simulationShaders = simulations.map((x) => new fxs.Shader(x));
 const particleShaders = particles.map((x) => new fxs.Shader(x));
 const simulationPrograms = simulationShaders.map((x) => new fxs.Program(fxs.screenVS, x));
 const particlePrograms = particleShaders.map((x) => new fxs.Program(particleVS, x));
+const particleProgramsVelAligned = particleShaders.map((x) => new fxs.Program(particleVelAlignedVS, x));
 
 const simSide = isMobile ? 32 : 64; //mah
 
@@ -48,6 +50,7 @@ class ParticleLayer {
     console.log(this.params);
     this.simulation = "";
     this.particle = "";
+    this.alignment = "";
     this.simulationProgram = null;
     this.particleProgram = null;
     this.borderPolicy = this.params.borderPolicy || "wrap";
@@ -79,9 +82,14 @@ class ParticleLayer {
       const loopMacro = "PERIODIC " + (this.borderPolicy == "wrap" ? "1" : "0");
       this.simulationProgram.setMacro(loopMacro);
     }
-    if (this.particle != this.params.particle) {
+    if (this.particle != this.params.particle || this.alignment != this.params.alignment) {
       this.particle = this.params.particle;
-      this.particleProgram = particlePrograms.find((p) => p.fs.name == this.particle);
+      this.alignment = this.params.alignment;
+      let programs = particlePrograms;
+      if (this.params.alignment == "velocity") {
+        programs = particleProgramsVelAligned;
+      }
+      this.particleProgram = programs.find((p) => p.fs.name == this.particle);
     }
   }
 

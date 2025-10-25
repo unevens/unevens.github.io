@@ -1,7 +1,7 @@
 import * as fxs from "./fxs.js";
 const themeNames = ["neon_hole", "holy", "index"];
 const simulations = ["single_attractor", "twin_attractor"];
-const particles = ["sticky_starlight", "circle", "uvDebug"];
+const particles = ["sticky_starlight", "circle", "square", "circle_and_square", "droplet", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["random_walk", "on_click", "follow_mouse"];
 
@@ -129,6 +129,7 @@ const paramInitializer = {
 
     simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true }),
     particle: new StringParameter({ values: particles, index: 0, forceRefresh: true }),
+    alignment: new StringParameter({ values: ["standard", "velocity"], index: 0 }),
     blend_mode: new StringParameter({ values: blend_modes, index: 0 }),
     interaction: new StringParameter({ values: interactions, index: 0 }),
     randomWalkSpeed: new NumParameter({ min: 0, max: .1, value: 0, step: 0.000001 }),
@@ -189,6 +190,26 @@ const paramInitializer = {
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
     },
 
+    droplet: {
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .122 }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
+        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
+        radius_1: new NumParameter({ min: 0.001, max: 1, value: .333 }),
+        radius_2: new NumParameter({ min: 0.001, max: 1, value: .133 }),
+        height: new NumParameter({ min: 0.01, max: 1, value: .85 }),
+    },
+
     circle: {
         hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
         hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
@@ -207,7 +228,42 @@ const paramInitializer = {
         radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
         radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
     },
-
+    square: {
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
+        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
+        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
+        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
+    },
+    circle_and_square: {
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
+        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
+        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
+        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
+    },
     bloom: {
         numPasses: new NumParameter({ min: 0, max: 16, value: 4, step: 1 }),
         amount: new NumParameter({ min: 0., max: 8, value: 1.8 }),

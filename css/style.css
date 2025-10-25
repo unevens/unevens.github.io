@@ -413,18 +413,6 @@ body {
   background-color: rgba(54, 54, 54, 0.86);
 }
 
-#wip_text {
-  position: fixed;
-  display: block;
-  top: 30vh;
-  height: 50vh;
-  right: 6vw;
-  width: 19vw;
-  text-align: center;
-  font-family: cursive;
-  color: white;
-}
-
 .ui-head {
   bottom: 3vh;
   right: 3vw;

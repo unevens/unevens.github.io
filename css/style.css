@@ -438,7 +438,7 @@ body {
 .text_home_cpy {
   width: 100vw;
   background-color: transparent;
-  color: rgb(69, 69, 69);
+  color: rgb(53, 53, 53);
   font-size: 70%;
   margin-top: -40px;
   text-align: center;
@@ -449,13 +449,13 @@ body {
 @media only screen and (max-height: 600px) {
   .text_home_cpy {
     margin-top: -30px;
-    /* color:hsl(0, 100%, 50%); */
+    color: rgb(54, 54, 54);
   }
 }
 
 @media only screen and (max-height: 800px) {
   .text_home_cpy {
     margin-top: -35px;
-    /* color:hsl(120, 100%, 50%); */
+    color: rgb(71, 71, 71);
   }
 }

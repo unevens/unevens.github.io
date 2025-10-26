@@ -1,5 +1,5 @@
 import * as fxs from "./fxs.js";
-const themeNames = ["neon_hole", "holy", "index"];
+const themeNames = ["neon_hole", "holy", "virtual_flux", "index"];
 const simulations = ["single_attractor", "twin_attractor"];
 const particles = ["sticky_starlight", "circle", "square", "circle_and_square", "droplet", "uvDebug"];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];

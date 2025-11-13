@@ -555,6 +555,7 @@ if (themeSelect) {
 export {
     registerThemeDataInterface,
     simulations,
+    themeNames,
     particles,
     blend_modes,
     setBuiltinTheme,

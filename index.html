@@ -1,154 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta
+      name="description"
+      content="Personal Website About TechArt and Audio Development"
+    />
+    <meta name="author" content="Dario Mambro" />
 
-<head>
-  <meta charset="utf8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-  <meta name="description" content="Personal Website About TechArt and Audio Development" />
-  <meta name="author" content="Dario Mambro" />
+    <link rel="icon" type="image/png" href="img/favicon.png" />
 
-  <link rel="icon" type="image/png" href="img/favicon.png" />
+    <title>unevens</title>
 
-  <title>unevens</title>
+    <!-- Bootstrap core CSS -->
+    <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
 
-  <!-- Bootstrap core CSS -->
-  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Custom fonts for this template -->
+    <link
+      href="vendor/fontawesome-free/css/all.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic,900,900italic"
+      rel="stylesheet"
+      type="text/css"
+    />
 
-  <!-- Custom fonts for this template -->
-  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css" />
-  <link
-    href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"
-    rel="stylesheet" type="text/css" />
-  <link
-    href="https://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic,900,900italic"
-    rel="stylesheet" type="text/css" />
+    <!-- Custom styles for this template -->
+    <link href="css/style.min.css" rel="stylesheet" />
 
-  <!-- Custom styles for this template -->
-  <link href="css/style.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="img/favicon.png" />
+    <!--[if IE]><link rel="shortcut icon" href="img/favicon.ico" /><![endif]-->
 
-  <link rel="icon" type="image/png" href="img/favicon.png" />
-  <!--[if IE]><link rel="shortcut icon" href="img/favicon.ico" /><![endif]-->
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css"
+    />
+  </head>
 
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" />
-</head>
+  <body id="page-top">
+    <canvas id="canvas" class="home-canvas"></canvas>
 
-<body id="page-top">
-  <canvas id="canvas" class="home-canvas"></canvas>
-
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
-    <div class="container">
-      <a class="navbar-brand js-scroll-trigger" href="index.html">unevens</a>
-      <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
-        data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
-        aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="zenbox.html">ZenBox</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="audio.html">Audio</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link js-scroll-trigger" href="music.html">Music</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-  <!-- page -->
-  <header class="masthead text-center text-white d-flex" id="page_head" style="background-color: #212529;">
-    <div class="container my-auto">
-      <div class="row">
-        <div class="col-lg-10 mx-auto">
-          <h1 class="sr-head">
-            <br />
-            <strong>Hello and Welcome </strong>
-          </h1>
-          <hr />
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand js-scroll-trigger" href="index.html">unevens</a>
+        <button
+          class="navbar-toggler navbar-toggler-right"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbarResponsive"
+          aria-controls="navbarResponsive"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="zenbox.html"
+                >ZenBox</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="audio.html">Audio</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link js-scroll-trigger" href="music.html">Music</a>
+            </li>
+          </ul>
         </div>
       </div>
-      <div class="row">
-        <div class="col-lg-12 mx-auto sr-subhead">
-          <p class="text-faded mb-5">
-            Hi, I am Dario Mambro, a digital art enthusiast with a background in applied mathematics.
-            <br />
-            Welcome to my personal website!
-            <br /><br />
-            Check out the <a class="text-faded-link" href="zenbox.html">ZenBox</a> for some trippy visual
-            experiences,
-            <br />
-            the <a class="text-faded-link" href="audio.html">Audio</a> page for some open source audio plugins,
-            <br />
-            and the <a class="text-faded-link" href="music.html">Music</a> page for some unusual vibes. <br /><br />
-            I have professional experience as a technical artist and software engineer in games, pro audio and xr-experiences. 
-            <br /><br />
-            If you want to connect with me, you can find me on
-            <a class="text-faded-link" href="https://www.github.com/unevens">GitHub</a>,
-            <a class="text-faded-link" href="https://www.linkedin.com/in/dario-m89/">LinkedIn</a>,
-            <a class="text-faded-link" href="https://www.deviantart.com/unevens">DeviantArt</a>.
-          </p>
+    </nav>
+    <!-- page -->
+    <header
+      class="masthead text-center text-white d-flex"
+      id="page_head"
+      style="background-color: #212529"
+    >
+      <div class="container my-auto">
+        <div class="row">
+          <div class="col-lg-10 mx-auto">
+            <h1 class="sr-head">
+              <br />
+              <strong>Hello and Welcome </strong>
+            </h1>
+            <hr />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-12 mx-auto sr-subhead">
+            <p class="text-faded mb-5">
+              Hi, I am Dario Mambro, a digital art enthusiast with a background
+              in applied mathematics.
+              <br />
+              Welcome to my personal website!
+              <br /><br />
+              Check out the
+              <a class="text-faded-link" href="zenbox.html">ZenBox</a> for some
+              trippy visual experiences,
+              <br />
+              the <a class="text-faded-link" href="audio.html">Audio</a> page
+              for some open source audio plugins,
+              <br />
+              and the
+              <a class="text-faded-link" href="music.html">Music</a> page for
+              some unusual vibes. <br /><br />
+              I have professional experience as a technical artist and software
+              engineer in games, pro audio and xr-experiences.
+              <br /><br />
+              If you want to connect with me, you can find me on
+              <a class="text-faded-link" href="https://www.github.com/unevens"
+                >GitHub</a
+              >,
+              <a
+                class="text-faded-link"
+                href="https://www.linkedin.com/in/dario-m89/"
+                >LinkedIn</a
+              >,
+              <a
+                class="text-faded-link"
+                href="https://www.deviantart.com/unevens"
+                >DeviantArt</a
+              >.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-  </header>
-  <!-- <div style="min-height:100%"> -->
-  <div>
-    <div id="ctrls" hidden="true" style="overflow-y: auto; font-family: monospace;">
+    </header>
+    <!-- <div style="min-height:100%"> -->
+    <div>
+      <div
+        id="ctrls"
+        hidden="true"
+        style="overflow-y: auto; font-family: monospace"
+      >
+        <div id="params"></div>
 
-      <div id="params"></div>
+        <div id="saveload">
+          <button
+            style="display: block; width: 160px; height: 30px"
+            onclick="document.getElementById('loadScene').click()"
+          >
+            <i class="fas fa-folder-open"></i> Load Scene
+          </button>
+          <input type="file" id="loadScene" style="display: none" />
+          <button
+            id="saveScene"
+            style="display: block; width: 160px; height: 30px"
+          >
+            <i class="fas fa-save"></i> Save Scene
+          </button>
+          <button
+            style="display: block; width: 80px; height: 30px"
+            onclick="document.getElementById('loadParams').click()"
+          >
+            <i class="fas fa-folder-open"></i> Load Layer
+          </button>
+          <input type="file" id="loadParams" style="display: none" />
+          <button
+            id="saveParams"
+            style="display: block; width: 80px; height: 30px"
+          >
+            <i class="fas fa-save"></i> Save Layer
+          </button>
+        </div>
 
-      <div id="saveload">
-        <button style="display:block;width:160px; height:30px;" onclick="document.getElementById('loadScene').click()">
-          <i class="fas fa-folder-open"></i> Load Scene
-        </button>
-        <input type='file' id="loadScene" style="display:none">
-        <button id="saveScene" style="display:block;width:160px; height:30px;">
-          <i class="fas fa-save"></i> Save Scene
-        </button>
-        <button style="display:block;width:80px; height:30px;" onclick="document.getElementById('loadParams').click()">
-          <i class="fas fa-folder-open"></i> Load Layer
-        </button>
-        <input type='file' id="loadParams" style="display:none">
-        <button id="saveParams" style="display:block;width:80px; height:30px;">
-          <i class="fas fa-save"></i> Save Layer
-        </button>
+        <div id="fps" style="font-size: xx-small" hidden="true"></div>
       </div>
 
-      <div id="fps" style="font-size: xx-small" hidden="true">
-
+      <div class="ui-head">
+        <i id="refresh" class="ctrls-toggle fa fa-refresh fa-2x"></i
+        >&nbsp;&nbsp;&nbsp;&nbsp; ZenBox Theme: &nbsp;<select
+          id="zenbox-theme"
+        ></select>
+        &nbsp;&nbsp;
+        <i
+          class="ctrls-toggle fa fa-edit fa-2x"
+          onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"
+        ></i>
       </div>
-
-
     </div>
 
-    <div class="ui-head">
-      <i id="refresh" class="ctrls-toggle fa fa-refresh fa-2x"></i>&nbsp;&nbsp;&nbsp;&nbsp;
-      ZenBox Theme: &nbsp;<select id="zenbox-theme"> </select> &nbsp;&nbsp;
-      <i class="ctrls-toggle fa fa-edit fa-2x"
-        onclick="document.getElementById('ctrls').hidden=!document.getElementById('ctrls').hidden"></i>
-    </div>
-  </div>
+    <div class="text_home_cpy">Copyright &copy; Dario Mambro 2023-2025</div>
 
-  <div class="text_home_cpy">Copyright &copy; Dario Mambro 2023-2025</div>
+    <!-- Bootstrap core JavaScript -->
+    <script src="vendor/jquery/jquery.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-  <!-- Bootstrap core JavaScript -->
-  <script src="vendor/jquery/jquery.min.js"></script>
-  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- Plugin JavaScript -->
+    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="vendor/scrollreveal/scrollreveal.min.js"></script>
+    <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
 
-  <!-- Plugin JavaScript -->
-  <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-  <script src="vendor/scrollreveal/scrollreveal.min.js"></script>
-  <script src="vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
-
-  <script type="module">
-    import { createParticleScene } from "./gl/particles.js";
-    const scene = createParticleScene("index");
-    scene.start();
-  </script>
-</body>
-
+    <script type="module">
+      import {
+        createParticleScene,
+        ParticleAnimation,
+      } from "./gl/particles.js";
+      const scene = createParticleScene("index");
+      const animation = new ParticleAnimation(scene);
+      const time = 10;
+      animation.timeline = [
+        { theme: "index", time },
+        { theme: "virtual_flux", time },
+        { theme: "neon_hole", time },
+      ];
+      animation.start();
+    </script>
+  </body>
 </html>

@@ -3,7 +3,7 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { setBuiltinTheme, simulations, particles, addToOnThemeChangedDelegate, registerThemeDataInterface } from "./params.js";
+import { setBuiltinTheme, simulations, particles, addToOnThemeChangedDelegate, registerThemeDataInterface, themeNames } from "./params.js";
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
 
@@ -333,6 +333,90 @@ function createParticleScene(themeName) {
   return scene;
 }
 
+class ParticleAnimation {
+  constructor(particleScene) {
+    this.particleScene = particleScene;
+    this.timeline = [];
+    for (let theme of themeNames) {
+      this.timeline.push({ theme, time: 5 });
+    }
+    this.currentStep = 0;
+    this.currentTime = 0;
+    this.randomTimes = false;
+    this.randomTimeMin = 10;
+    this.randomTimeMax = 10;
+    this.randomThemes = false;
+    this.loop = true;
+    this.isAnimating = true;
+  }
+
+  start() {
+    fxs.start(() => this.particleScene.onStart(), (time, deltaTime) => this.onNewFrame(time, deltaTime));
+  }
+
+  setRandomTime() {
+    this.currentTime = this.randomTimeMin + (this.randomTimeMax - this.randomTimeMin) * Math.random();
+  }
+
+  setRandomTheme() {
+    const theme = themeNames[Math.min(themeNames.length - 1, Math.floor(themeNames.length * Math.random()))];
+    setBuiltinTheme(theme);
+  }
+
+  onNewFrame(time, deltaTime) {
+    if (this.isAnimating) {
+      this.currentTime -= deltaTime;
+      const fullRandom = this.randomThemes && this.randomTimes;
+      if (fullRandom) {
+        if (this.currentTime <= 0) {
+          this.setRandomTime();
+          this.setRandomTheme();
+        }
+      } else {
+        if (this.currentTime <= 0) {
+          if (this.loop) {
+            this.currentStep = (this.currentStep + 1) % this.timeline.length;
+          } else {
+            if (this.currentStep >= this.timeline.length - 1) {
+              this.isAnimating = false;
+              this.currentStep = this.timeline.length - 1; //paranoia
+            } else {
+              this.currentStep += 1;
+            }
+          }
+          const stepData = this.timeline[this.currentStep];
+          if (this.randomTimes) {
+            this.setRandomTime();
+          } else {
+            this.currentTime = stepData.time;
+          }
+          if (this.randomThemes) {
+            this.setRandomTheme();
+          } else {
+            setBuiltinTheme(stepData.theme);
+          }
+        }
+      }
+    }
+    this.particleScene.onNewFrame(time, deltaTime);
+  }
+
+  rewind() {
+    this.currentTime = 0;
+    this.currentStep = 0;
+  }
+
+  playAnimation() {
+    this.isAnimating = true;
+  }
+
+  pauseAnimation() {
+    this.isAnimating = false;
+  }
+
+};
+
+
 export {
-  ParticleScene, createParticleScene
+  ParticleScene, createParticleScene, ParticleAnimation
 }

@@ -18,6 +18,68 @@ function setParams(params) {
     getThemeData().layers[currentLayer] = params;
 }
 
+// ── undo ──────────────────────────────────────────────────────────────────────
+
+const undoHistory = [];
+const MAX_UNDO = 50;
+let isUndoing = false;
+
+function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+function snapshotBeforeEdit() {
+    if (isUndoing) return;
+    const themeData = getThemeData();
+    if (!themeData?.layers) return;
+    undoHistory.push({ themeData: deepClone(themeData), currentLayer });
+    if (undoHistory.length > MAX_UNDO) undoHistory.shift();
+    updateLayerControls();
+}
+
+function undo() {
+    if (undoHistory.length === 0) return;
+    isUndoing = true;
+    const snapshot = undoHistory.pop();
+    currentLayer = snapshot.currentLayer;
+    setThemeDataAndUpdateUi(snapshot.themeData);
+    isUndoing = false;
+    updateLayerControls();
+}
+
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        if (tag === 'input' || tag === 'textarea') return;
+        e.preventDefault();
+        undo();
+    }
+});
+
+// ── label helpers ─────────────────────────────────────────────────────────────
+
+function formatLabel(key) {
+    return key
+        .replace(/_/g, ' ')
+        .replace(/([A-Z])/g, ' $1')
+        .toLowerCase()
+        .trim();
+}
+
+function toTitleCase(str) {
+    return str.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function sectionTitle(key, getJson) {
+    const label = toTitleCase(formatLabel(key));
+    if (key === 'bloom') return 'FX: Bloom';
+    if (key === getJson()['simulation']) return 'Simulation: ' + label;
+    if (key === getJson()['particle']) return 'Particle: ' + label;
+    return label;
+}
+
+// ── parameter classes ─────────────────────────────────────────────────────────
+
 class NumParameter {
     constructor(options) {
         this.min = options.min;
@@ -28,49 +90,60 @@ class NumParameter {
     }
 
     addToUi(getJson, key, paramDiv) {
-        paramDiv.innerText = key;
-        paramDiv.style = "font-size: xx-small"
+        paramDiv.className = 'param-row';
+
+        const label = document.createElement('div');
+        label.className = 'param-label';
+        label.textContent = formatLabel(key);
+        paramDiv.appendChild(label);
+
+        const controls = document.createElement('div');
+        controls.className = 'param-controls';
+        paramDiv.appendChild(controls);
+
         const slider = document.createElement('input');
-        paramDiv.appendChild(slider);
+        controls.appendChild(slider);
+
         const numInputBox = document.createElement('input');
-        paramDiv.appendChild(numInputBox);
+        controls.appendChild(numInputBox);
+
         const reset = document.createElement('button');
-        paramDiv.appendChild(reset);
+        controls.appendChild(reset);
 
         slider.type = 'range';
+        slider.className = 'param-slider';
         slider.min = this.min;
         slider.max = this.max;
         slider.step = this.step;
         slider.value = getJson()[key];
+        slider.addEventListener('mousedown', snapshotBeforeEdit);
+        slider.addEventListener('touchstart', snapshotBeforeEdit, { passive: true });
         slider.oninput = () => {
             getJson()[key] = slider.value;
             numInputBox.value = slider.value;
-            console.log(key + " slider.oninput " + slider.value);
-            if (this.onChanged) {
-                this.onChanged(slider.value);
-            }
+            if (this.onChanged) this.onChanged(slider.value);
         };
+
         numInputBox.type = 'number';
+        numInputBox.className = 'param-number';
         numInputBox.value = getJson()[key];
-        numInputBox.style = "width:60px"
+        numInputBox.addEventListener('focus', snapshotBeforeEdit);
         numInputBox.oninput = () => {
             getJson()[key] = numInputBox.value;
             slider.value = numInputBox.value;
-            console.log(key + " numInputBox.oninput " + numInputBox.value);
-            if (this.onChanged) {
-                this.onChanged(numInputBox.value);
-            }
+            if (this.onChanged) this.onChanged(numInputBox.value);
         };
+
         const defaultValue = getJson()[key];
-        reset.innerHTML = '<i class="fas fa-undo"></i>'
+        reset.className = 'param-reset';
+        reset.title = 'Reset';
+        reset.innerHTML = '<i class="fas fa-undo"></i>';
         reset.onclick = () => {
+            snapshotBeforeEdit();
             numInputBox.value = defaultValue;
             slider.value = defaultValue;
             getJson()[key] = defaultValue;
-            console.log("reset.onclick " + numInputBox.value);
-            if (this.onChanged) {
-                this.onChanged(defaultValue);
-            }
+            if (this.onChanged) this.onChanged(defaultValue);
         };
     }
 }
@@ -82,12 +155,23 @@ class StringParameter {
         this.forceRefresh = options.forceRefresh || false;
         this.onChanged = options.onChanged || null;
     }
+
     addToUi(getJson, key, paramDiv) {
-        paramDiv.innerText = key;
-        paramDiv.style = "font-size: xx-small"
+        paramDiv.className = 'param-row';
+
+        const label = document.createElement('div');
+        label.className = 'param-label';
+        label.textContent = formatLabel(key);
+        paramDiv.appendChild(label);
+
+        const controls = document.createElement('div');
+        controls.className = 'param-controls';
+        paramDiv.appendChild(controls);
+
         const select = document.createElement('select');
-        paramDiv.appendChild(select);
-        console.log("adding select for " + key + " with default " + getJson()[key])
+        select.className = 'param-select';
+        controls.appendChild(select);
+
         for (let optionText of this.values) {
             let option = document.createElement("option");
             option.value = optionText;
@@ -96,27 +180,27 @@ class StringParameter {
         }
         select.value = getJson()[key];
         select.onchange = () => {
+            snapshotBeforeEdit();
             getJson()[key] = select.value;
-            console.log(key + " select.onchange " + select.value);
-            if (this.onChanged) {
-                this.onChanged(select.value);
-            }
+            if (this.onChanged) this.onChanged(select.value);
             if (this.forceRefresh) {
                 cleanupUi();
                 initializeUiFromParams();
             }
         };
+
         const reset = document.createElement('button');
-        paramDiv.appendChild(reset);
-        reset.innerHTML = '<i class="fas fa-undo"></i>'
+        reset.className = 'param-reset';
+        reset.title = 'Reset';
+        reset.innerHTML = '<i class="fas fa-undo"></i>';
+        controls.appendChild(reset);
+
         const defaultValue = getJson()[key];
         reset.onclick = () => {
+            snapshotBeforeEdit();
             getJson()[key] = defaultValue;
             select.value = defaultValue;
-            console.log(key + " reset.onclick " + select.value);
-            if (this.onChanged) {
-                this.onChanged(defaultValue);
-            }
+            if (this.onChanged) this.onChanged(defaultValue);
             if (this.forceRefresh) {
                 cleanupUi();
                 initializeUiFromParams();
@@ -124,6 +208,8 @@ class StringParameter {
         };
     }
 }
+
+// ── parameter definitions ─────────────────────────────────────────────────────
 
 const paramInitializer = {
 
@@ -184,7 +270,6 @@ const paramInitializer = {
         lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
         thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
         falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
         threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
         blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
@@ -201,7 +286,6 @@ const paramInitializer = {
         lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
         thickness: new NumParameter({ min: 0, max: 1, value: .122 }),
         falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
         threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
         blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
@@ -221,13 +305,13 @@ const paramInitializer = {
         lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
         thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
         falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
         threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
         blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
         radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
         radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
     },
+
     square: {
         hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
         hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
@@ -239,13 +323,13 @@ const paramInitializer = {
         lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
         thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
         falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
         threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
         blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
         radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
         radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
     },
+
     circle_and_square: {
         hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
         hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
@@ -257,13 +341,13 @@ const paramInitializer = {
         lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
         thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
         falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: .01, value: .0001 }),
         threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
         blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
         blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
         radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
         radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
     },
+
     bloom: {
         numPasses: new NumParameter({ min: 0, max: 16, value: 4, step: 1 }),
         amount: new NumParameter({ min: 0., max: 8, value: 1.8 }),
@@ -272,6 +356,8 @@ const paramInitializer = {
         strength: new NumParameter({ min: .1, max: 50, value: 20 }),
     },
 };
+
+// ── param object initialisation ───────────────────────────────────────────────
 
 function initParamObj(paramInit) {
     let obj = {};
@@ -285,12 +371,11 @@ function initParamObj(paramInit) {
         } else if (paramInit[key] instanceof Object) {
             obj[key] = initParamObj(paramInit[key]);
         }
-        else if (paramInit[key] instanceof Object) {
-            obj[key] = initParamObj(paramInit[key]);
-        }
     }
     return obj;
 }
+
+// ── UI ────────────────────────────────────────────────────────────────────────
 
 const paramsContainer = document.getElementById('params');
 let themeSelect;
@@ -302,56 +387,141 @@ function cleanupUi() {
     }
 }
 
-function addParamsToUi(getJson, getInit) {
+function makeGroup(title, container) {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'param-group';
+    container.appendChild(groupDiv);
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'param-section';
+    titleDiv.textContent = title;
+    groupDiv.appendChild(titleDiv);
+
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'param-group__body';
+    groupDiv.appendChild(bodyDiv);
+
+    return bodyDiv;
+}
+
+function addParamsToUi(getJson, getInit, container = paramsContainer) {
+    const isTopLevel = container === paramsContainer;
+    const flatContainer = isTopLevel
+        ? makeGroup('Main Settings', container)
+        : container;
+
     for (let key in getInit()) {
         const init = getInit()[key];
         if (typeof init === "boolean") {
             const jsonValue = getJson()[key] || init;
             getJson()[key] = getJson()[key] || jsonValue;
+
             const paramDiv = document.createElement('div');
-            paramDiv.innerText = key;
-            paramDiv.style = "font-size: xx-small"
-            const numInputBox = document.createElement('input');
-            numInputBox.type = 'checkbox';
-            numInputBox.value = getJson()[key];
-            numInputBox.oninput = () => {
-                getJson()[key] = numInputBox.value;
-                console.log(key + " numInputBox.oninput " + numInputBox.value);
+            paramDiv.className = 'param-row';
+
+            const label = document.createElement('div');
+            label.className = 'param-label';
+            label.textContent = formatLabel(key);
+            paramDiv.appendChild(label);
+
+            const controls = document.createElement('div');
+            controls.className = 'param-controls';
+            paramDiv.appendChild(controls);
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'param-checkbox';
+            checkbox.checked = getJson()[key];
+            checkbox.onchange = () => {
+                snapshotBeforeEdit();
+                getJson()[key] = checkbox.checked;
             };
-            paramDiv.appendChild(numInputBox);
+            controls.appendChild(checkbox);
+
             const reset = document.createElement('button');
-            reset.innerHTML = '<i class="fas fa-undo"></i>'
+            reset.className = 'param-reset';
+            reset.title = 'Reset';
+            reset.innerHTML = '<i class="fas fa-undo"></i>';
             reset.onclick = () => {
-                numInputBox.value = jsonValue;
+                snapshotBeforeEdit();
+                checkbox.checked = jsonValue;
                 getJson()[key] = jsonValue;
-                console.log("reset.onclick " + numInputBox.value);
             };
-            paramDiv.appendChild(reset);
-            paramsContainer.appendChild(paramDiv);
+            controls.appendChild(reset);
+
+            flatContainer.appendChild(paramDiv);
         }
         else if (init.addToUi) {
             const paramDiv = document.createElement('div');
-            paramsContainer.appendChild(paramDiv);
+            flatContainer.appendChild(paramDiv);
             init.addToUi(getJson, key, paramDiv);
         }
         else if (getInit()[key] instanceof Object) {
             let skip = true;
             if (key == 'bloom' || key == getJson()["particle"] || key == getJson()["simulation"])
                 skip = false;
-            console.log("skip? " + key + " = " + skip);
             if (skip)
                 continue;
-            const titleDiv = document.createElement('div');
-            titleDiv.innerText = key;
-            titleDiv.style = "font-weight: bold"
-            paramsContainer.appendChild(titleDiv);
+
+            const bodyDiv = makeGroup(sectionTitle(key, getJson), container);
+
             const jsonValue = getJson()[key] || {};
             const getSubObj = () => { return jsonValue; }
             const getSubInit = () => { return getInit()[key]; }
-            addParamsToUi(getSubObj, getSubInit); //yes, yes, this is bad
+            addParamsToUi(getSubObj, getSubInit, bodyDiv);
         }
     }
 }
+
+// ── layer controls ────────────────────────────────────────────────────────────
+
+function updateLayerControls() {
+    const layerSelect = document.getElementById('layer-select');
+    if (!layerSelect) return;
+    const themeData = getThemeData();
+    if (!themeData?.layers) return;
+    const layers = themeData.layers;
+
+    layerSelect.innerHTML = '';
+    layers.forEach((_, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.text = `Layer ${i + 1}`;
+        layerSelect.appendChild(opt);
+    });
+    layerSelect.value = currentLayer;
+
+    const removeBtn = document.getElementById('remove-layer');
+    if (removeBtn) removeBtn.disabled = layers.length <= 1;
+
+    const undoBtn = document.getElementById('undo-edit');
+    if (undoBtn) undoBtn.disabled = undoHistory.length === 0;
+}
+
+function switchToLayer(index) {
+    currentLayer = Math.max(0, Math.min(index, getThemeData().layers.length - 1));
+    cleanupUi();
+    initializeUiFromParams();
+}
+
+function addLayer() {
+    snapshotBeforeEdit();
+    const themeData = deepClone(getThemeData());
+    themeData.layers.push(deepClone(themeData.layers[currentLayer]));
+    currentLayer = themeData.layers.length - 1;
+    setThemeDataAndUpdateUi(themeData);
+}
+
+function removeLayer() {
+    if (getThemeData().layers.length <= 1) return;
+    snapshotBeforeEdit();
+    const themeData = deepClone(getThemeData());
+    themeData.layers.splice(currentLayer, 1);
+    currentLayer = Math.min(currentLayer, themeData.layers.length - 1);
+    setThemeDataAndUpdateUi(themeData);
+}
+
+// ── theme / params I/O ────────────────────────────────────────────────────────
 
 function downloadJson(obj, name) {
     var element = document.createElement('a');
@@ -365,6 +535,7 @@ function downloadJson(obj, name) {
 
 function initializeUiFromParams() {
     addParamsToUi(getParams, () => paramInitializer);
+    updateLayerControls();
 }
 
 function readParamsFile(readFile) {
@@ -418,12 +589,11 @@ function applyLoadedParams(newParams) {
 }
 
 function loadedParams(evt) {
+    snapshotBeforeEdit();
     const newParams = JSON.parse(evt.target.result);
     applyLoadedParams(newParams);
     currentThemeName = "";
-    if (themeSelect) {
-        themeSelect.value = "";
-    }
+    if (themeSelect) themeSelect.value = "";
 }
 
 function setThemeDataAndUpdateUi(themeData) {
@@ -438,12 +608,11 @@ function setThemeDataAndUpdateUi(themeData) {
 }
 
 function loadedTheme(evt) {
+    snapshotBeforeEdit();
     const newThemeData = JSON.parse(evt.target.result);
     setThemeDataAndUpdateUi(newThemeData);
     currentThemeName = "";
-    if (themeSelect) {
-        themeSelect.value = "";
-    }
+    if (themeSelect) themeSelect.value = "";
 }
 
 function errorHandler(evt) {
@@ -468,25 +637,17 @@ function addToOnThemeChangedDelegate(f) {
 }
 
 function setBuiltinTheme(themeName) {
-    if (themeName == "") {
-        return;
-    }
+    if (themeName == "") return;
     const url = "../themes/" + themeName + ".json";
     try {
         fetch(url).then((response) => {
             if (response.ok) {
-                response.json().then(
-                    (themeData) => {
-                        setThemeDataAndUpdateUi(themeData);
-                        currentThemeName = themeName;
-                        if (themeSelect) {
-                            themeSelect.value = themeName;
-                        }
-                        for (let f of onThemeChanged) {
-                            f();
-                        }
-                    }
-                );
+                response.json().then((themeData) => {
+                    setThemeDataAndUpdateUi(themeData);
+                    currentThemeName = themeName;
+                    if (themeSelect) themeSelect.value = themeName;
+                    for (let f of onThemeChanged) f();
+                });
             }
         });
     } catch (error) {
@@ -494,47 +655,49 @@ function setBuiltinTheme(themeName) {
     }
 }
 
+// ── wire up controls ──────────────────────────────────────────────────────────
+
+const layerSelectEl = document.getElementById('layer-select');
+if (layerSelectEl) {
+    layerSelectEl.onchange = () => switchToLayer(parseInt(layerSelectEl.value));
+}
+
+const addLayerBtn = document.getElementById('add-layer');
+if (addLayerBtn) addLayerBtn.onclick = addLayer;
+
+const removeLayerBtn = document.getElementById('remove-layer');
+if (removeLayerBtn) removeLayerBtn.onclick = removeLayer;
+
+const undoEditBtn = document.getElementById('undo-edit');
+if (undoEditBtn) undoEditBtn.onclick = undo;
+
 const saveParams = document.getElementById('saveParams');
 if (saveParams) {
-    saveParams.onclick = () => {
-        downloadJson(getParams(), "zenbox_layer");
-    };
+    saveParams.onclick = () => downloadJson(getParams(), "zenbox_layer");
 
     const loadParams = document.getElementById('loadParams');
     loadParams.type = "file";
-    loadParams.innerText = "Load Configuration"
-    loadParams.accept = ".json"
+    loadParams.innerText = "Load Configuration";
+    loadParams.accept = ".json";
     loadParams.addEventListener("input", () => {
-        if (loadParams.files.length >= 1) {
-            console.log("File selected: ", loadParams.files[0]);
-            readParamsFile(loadParams.files[0]);
-        }
+        if (loadParams.files.length >= 1) readParamsFile(loadParams.files[0]);
     });
 }
 
-
-
 const saveTheme = document.getElementById('saveScene');
 if (saveTheme) {
-    saveTheme.onclick = () => {
-        downloadJson(getThemeData(), "zenbox_scene");
-    };
+    saveTheme.onclick = () => downloadJson(getThemeData(), "zenbox_scene");
 }
-
 
 const loadTheme = document.getElementById('loadScene');
 if (loadTheme) {
     loadTheme.type = "file";
-    loadTheme.innerText = "Load Configuration"
-    loadTheme.accept = ".json"
+    loadTheme.innerText = "Load Configuration";
+    loadTheme.accept = ".json";
     loadTheme.addEventListener("input", () => {
-        if (loadTheme.files.length >= 1) {
-            console.log("File selected: ", loadTheme.files[0]);
-            readThemeFile(loadTheme.files[0]);
-        }
+        if (loadTheme.files.length >= 1) readThemeFile(loadTheme.files[0]);
     });
 }
-
 
 themeSelect = document.getElementById('zenbox-theme');
 if (themeSelect) {
@@ -545,10 +708,7 @@ if (themeSelect) {
         themeSelect.appendChild(option);
     }
     themeSelect.value = currentThemeName;
-    themeSelect.onchange = () => {
-        console.log("themeSelect .onchange " + themeSelect.value);
-        setBuiltinTheme(themeSelect.value);
-    };
+    themeSelect.onchange = () => setBuiltinTheme(themeSelect.value);
 }
 
 

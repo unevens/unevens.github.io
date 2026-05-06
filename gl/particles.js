@@ -60,11 +60,12 @@ class ParticleLayer {
       new fxs.Framebuffer({ size: settings.simSize, filter: gl.NEAREST, bits: 16 }),
     ];
 
-    ///// DRAWING
-    this.fbos = options.fbos;
-    for (let i = 0; i < 2; i++) {
-      this.fbos[i] = fxs.createScreenFramebuffer({ bits: 8, resolutionCoef: () => settings.resolutionCoef });
-    }
+    // Private render FBO — not shared with other layers
+    this.renderFbo = fxs.createScreenFramebuffer({ bits: 8, resolutionCoef: () => settings.resolutionCoef });
+
+    // Shared accumulation FBO owned by the scene
+    this.accumFbo = options.accumFbo;
+
     this.viewportSize = Float32Array.from(fxs.viewportSize);
     this.interactionPoint = Float32Array.from(fxs.mouse);
     this.ratioXonY = Float32Array.from([1, 1]);
@@ -128,7 +129,9 @@ class ParticleLayer {
     this.params = params;
   }
 
-  onNewFrame(time, deltaTime, isLastLayer) {
+  // isFirstLayer: true for the first layer in the stack each frame.
+  // Non-first layers blend additively onto the shared accumulation buffer.
+  onNewFrame(time, deltaTime, isFirstLayer) {
     if (pause) {
       deltaTime = 0;
     }
@@ -187,7 +190,7 @@ class ParticleLayer {
       }
     }
 
-    //this.simulation
+    // Simulate
     gl.disable(gl.BLEND);
     gl.disable(gl.DEPTH_TEST);
     this.checkUpdateSimulationSize();
@@ -209,10 +212,9 @@ class ParticleLayer {
     }
     fxs.quadVAO.draw();
 
-    //draw
-    this.fbos[0].bind();
+    // Draw particles into private render FBO
+    this.renderFbo.bind();
     gl.viewport(0, 0, this.viewportSize[0], this.viewportSize[1]);
-
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     if (this.params.blend_mode === "alpha_blend") {
@@ -247,13 +249,20 @@ class ParticleLayer {
       gl.disable(gl.DEPTH_TEST);
     }
 
+    // Apply bloom and composite into shared accumulation buffer.
+    // Non-first layers blend additively so each layer's light adds to the stack.
     bloom.setParams(this.params.bloom);
-    bloom.apply(this.fbos[0].textures[0]);
-    if (isLastLayer) {
-      bloom.addTo(this.fbos[0].textures[0]);
-    } else {
-      bloom.addTo(this.fbos[0].textures[0], this.fbos[2]);
+    bloom.apply(this.renderFbo.textures[0]);
+
+    if (!isFirstLayer) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE);
     }
+    bloom.addTo(this.renderFbo.textures[0], this.accumFbo);
+    if (!isFirstLayer) {
+      gl.disable(gl.BLEND);
+    }
+
     this.swapSimBuffers();
   }
 
@@ -265,10 +274,8 @@ class ParticleScene {
   constructor() {
     this.theme = { layers: [] };
     this.particleLayers = [];
-    this.fbos = [];
-    for (let i = 0; i < 3; i++) {
-      this.fbos[i] = fxs.createScreenFramebuffer({ bits: 8, resolutionCoef: () => settings.resolutionCoef });
-    }
+    // Single shared accumulation FBO; all layers composite into it each frame.
+    this.accumFbo = fxs.createScreenFramebuffer({ bits: 8, resolutionCoef: () => settings.resolutionCoef });
     this.isAntiAliasEnabled = true;
     this.hasStarted = false;
     addToOnThemeChangedDelegate(() => {
@@ -290,23 +297,28 @@ class ParticleScene {
     }
     this.particleLayers.length = minNumLayers;
     for (let i = minNumLayers; i < this.theme.layers.length; ++i) {
-      const layer = new ParticleLayer({ fbos: this.fbos, params: this.theme.layers[i] });
+      const layer = new ParticleLayer({ accumFbo: this.accumFbo, params: this.theme.layers[i] });
       this.particleLayers.push(layer);
     }
   }
 
   onNewFrame(time, deltaTime) {
+    // Clear the accumulation buffer once at the start of each frame.
+    this.accumFbo.bind();
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    for (let i = 0; i < this.particleLayers.length; i++) {
+      this.particleLayers[i].onNewFrame(time, deltaTime, i === 0);
+    }
+
+    // Output accumulation to screen: with AA via SMAA, without AA via a direct copy.
     if (this.isAntiAliasEnabled && doAA) {
-      for (let layer of this.particleLayers) {
-        layer.onNewFrame(time, deltaTime, false);
-      }
-      smaa.apply(this.fbos[2].textures[0]);
+      smaa.apply(this.accumFbo.textures[0]);
     } else {
-      const lastLayerIndex = this.particleLayers.length - 1;
-      for (let i = 0; i < lastLayerIndex; ++i) {
-        this.particleLayers[i].onNewFrame(time, deltaTime, false);
-      }
-      this.particleLayers[lastLayerIndex].onNewFrame(time, deltaTime, true);
+      fxs.copyProgram.bind();
+      fxs.copyProgram.setUniforms({ srcTexture: this.accumFbo.textures[0] });
+      fxs.twgl.bindFramebufferInfo(gl, null);
+      fxs.quadVAO.draw();
     }
   }
 

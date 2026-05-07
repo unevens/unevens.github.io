@@ -1,7 +1,14 @@
 import * as fxs from "./fxs.js";
 const themeNames = ["neon_hole", "holy", "virtual_flux", "index"];
 const simulations = ["single_attractor", "twin_attractor"];
-const particles = ["sticky_starlight", "circle", "square", "circle_and_square", "droplet", "uvDebug"];
+const texParticleConfigs = [
+    { name: "leaves_atlas_02_512_2x2", cols: 2, rows: 2 },
+    { name: "seeds_atlas_512_5x2", cols: 5, rows: 2 },
+];
+const particles = [
+    "sticky_starlight", "circle", "square", "circle_and_square", "droplet", "uvDebug",
+    ...texParticleConfigs.map(cfg => `tex_${cfg.name}`),
+];
 const blend_modes = ["alpha_mask", "alpha_blend", "additive"];
 const interactions = ["random_walk", "on_click", "follow_mouse"];
 
@@ -362,6 +369,21 @@ const paramInitializer = {
         radius: new NumParameter({ min: 0., max: 4, value: 4 }),
         strength: new NumParameter({ min: .1, max: 50, value: 20 }),
     },
+
+    ...Object.fromEntries(texParticleConfigs.map(cfg => [`tex_${cfg.name}`, {
+        hueVariation: new NumParameter({ min: 0, max: 1, value: 0.025 }),
+        hueSpeed: new NumParameter({ min: 0, max: 1, value: 0.05 }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
+        saturation: new NumParameter({ min: 0, max: 1, value: 0.45 }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: 0.25 }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
+        texSaturation: new NumParameter({ min: 0, max: 1, value: 1 }),
+        tintAmount: new NumParameter({ min: 0, max: 1, value: 0 }),
+        brightness: new NumParameter({ min: 0, max: 5, value: 1 }),
+        threshold: new NumParameter({ min: 0, max: 1, value: 0.05, step: 0.001 }),
+    }])),
 };
 
 // ── param object initialisation ───────────────────────────────────────────────
@@ -772,6 +794,7 @@ export {
     themeNames,
     particles,
     blend_modes,
+    texParticleConfigs,
     setBuiltinTheme,
     addToOnThemeChangedDelegate,
     getInitializedParams,

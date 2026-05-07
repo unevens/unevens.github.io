@@ -3,7 +3,7 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { setBuiltinTheme, simulations, particles, addToOnThemeChangedDelegate, registerThemeDataInterface, themeNames, getMaxParticlesPerLayer } from "./params.js";
+import { setBuiltinTheme, simulations, particles, texParticleConfigs, addToOnThemeChangedDelegate, registerThemeDataInterface, themeNames, getMaxParticlesPerLayer } from "./params.js";
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
 
@@ -11,11 +11,47 @@ const particleVS = new fxs.Shader("particleQuad");
 const particleVelAlignedVS = new fxs.Shader("particleQuadVelAligned");
 const initSimFS = new fxs.Shader("initSim");
 const initSimProgram = new fxs.Program(fxs.screenVS, initSimFS);
+// Only create shaders for non-texture particle names (tex_* entries use tex_particle.glsl)
+const builtinParticleNames = particles.filter(p => !p.startsWith("tex_"));
 const simulationShaders = simulations.map((x) => new fxs.Shader(x));
-const particleShaders = particles.map((x) => new fxs.Shader(x));
+const particleShaders = builtinParticleNames.map((x) => new fxs.Shader(x));
 const simulationPrograms = simulationShaders.map((x) => new fxs.Program(fxs.screenVS, x));
 const particlePrograms = particleShaders.map((x) => new fxs.Program(particleVS, x));
 const particleProgramsVelAligned = particleShaders.map((x) => new fxs.Program(particleVelAlignedVS, x));
+
+// Texture atlas particle support
+const texParticleFS = new fxs.Shader("tex_particle");
+const texParticleProgram = new fxs.Program(particleVS, texParticleFS);
+const texParticleVelAlignedProgram = new fxs.Program(particleVelAlignedVS, texParticleFS);
+
+function loadAtlasEntry(url, cols, rows) {
+  const entry = { texture: null, cols, rows, cellAspect: rows / cols };
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  // Placeholder 1x1 white pixel while image loads
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+  const img = new Image();
+  img.onload = () => {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    // Compute exact cell aspect ratio from actual image dimensions
+    entry.cellAspect = (img.naturalWidth / cols) / (img.naturalHeight / rows);
+  };
+  img.src = url;
+  entry.texture = texture;
+  return entry;
+}
+
+const texParticleMap = Object.fromEntries(
+  texParticleConfigs.map(cfg => [`tex_${cfg.name}`,
+    loadAtlasEntry(`texs/${cfg.name}.png`, cfg.cols, cfg.rows)
+  ])
+);
 
 const simSide = isMobile ? 32 : 64; //mah
 
@@ -53,6 +89,7 @@ class ParticleLayer {
     this.alignment = "";
     this.simulationProgram = null;
     this.particleProgram = null;
+    this.texParticleEntry = null;
     this.borderPolicy = this.params.borderPolicy || "wrap";
     this.simulationSize = new Float32Array(4);
     this.simBuffers = [
@@ -86,11 +123,17 @@ class ParticleLayer {
     if (this.particle != this.params.particle || this.alignment != this.params.alignment) {
       this.particle = this.params.particle;
       this.alignment = this.params.alignment;
-      let programs = particlePrograms;
-      if (this.params.alignment == "velocity") {
-        programs = particleProgramsVelAligned;
+      const texEntry = texParticleMap[this.params.particle];
+      if (texEntry) {
+        this.texParticleEntry = texEntry;
+        this.particleProgram = this.params.alignment === "velocity"
+          ? texParticleVelAlignedProgram
+          : texParticleProgram;
+      } else {
+        this.texParticleEntry = null;
+        let programs = this.params.alignment === "velocity" ? particleProgramsVelAligned : particlePrograms;
+        this.particleProgram = programs.find((p) => p.fs.name == this.particle);
       }
-      this.particleProgram = programs.find((p) => p.fs.name == this.particle);
     }
   }
 
@@ -228,13 +271,22 @@ class ParticleLayer {
     }
 
     this.particleProgram.bind();
+    const aspectRatio = this.texParticleEntry
+      ? this.texParticleEntry.cellAspect
+      : this.params.particleAspectRatio;
     this.particleProgram.setUniforms({
       simulation: this.simBuffers[1].textures[0],
       simulationSize: this.simulationSize,
-      particleSize: [this.params.particleHeight * this.params.particleAspectRatio, this.params.particleHeight],
+      particleSize: [this.params.particleHeight * aspectRatio, this.params.particleHeight],
       ratio: wideScreen ? this.ratioYonX : this.ratioXonY,
       time,
     });
+    if (this.texParticleEntry) {
+      this.particleProgram.setUniforms({
+        atlasTexture: this.texParticleEntry.texture,
+        atlasSize: [this.texParticleEntry.cols, this.texParticleEntry.rows],
+      });
+    }
     const particleParams = this.params[this.particle];
     if (particleParams) {
       this.particleProgram.setUniforms(particleParams);

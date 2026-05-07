@@ -3,7 +3,7 @@
 
 import * as fxs from "./fxs.js";
 import * as AA from "./smaa.js";
-import { setBuiltinTheme, simulations, particles, addToOnThemeChangedDelegate, registerThemeDataInterface, themeNames } from "./params.js";
+import { setBuiltinTheme, simulations, particles, addToOnThemeChangedDelegate, registerThemeDataInterface, themeNames, getMaxParticlesPerLayer } from "./params.js";
 const gl = fxs.gl;
 const isMobile = fxs.isMobile;
 
@@ -73,7 +73,7 @@ class ParticleLayer {
     this.sideThresh = Float32Array.from([1, 1]);
   }
 
-  numParticles() { return Math.min(this.params.numParticles, settings.simSize[0] * settings.simSize[1]); }
+  numParticles() { return Math.min(this.params.numParticles, getMaxParticlesPerLayer(), settings.simSize[0] * settings.simSize[1]); }
 
   checkUpdatePrograms() {
     if (this.simulation != this.params.simulation || this.borderPolicy != this.params.borderPolicy) {

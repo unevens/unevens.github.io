@@ -667,6 +667,14 @@ header.masthead {
   bottom: 0
 }
 
+/* ── global (non-serialized) params ── */
+
+#global-params {
+  padding: 0.5rem 0.55rem 0.25rem;
+  border-bottom: 1px solid rgba(218, 210, 194, 0.12);
+  margin-bottom: 0.25rem
+}
+
 /* ── layer controls ── */
 
 #layer-controls {

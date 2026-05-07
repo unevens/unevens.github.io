@@ -9,6 +9,13 @@ let getThemeData = () => { };
 let setThemeData = (data) => { };
 let currentLayer = 0;
 
+// ── global (non-serialized) ───────────────────────────────────────────────────
+let maxParticlesPerLayer = fxs.isMobile ? 1024 : 4096;
+
+function getMaxParticlesPerLayer() {
+    return maxParticlesPerLayer;
+}
+
 function getParams() {
     const themeData = getThemeData();
     return themeData.layers[currentLayer];
@@ -655,7 +662,54 @@ function setBuiltinTheme(themeName) {
     }
 }
 
+// ── global params UI ─────────────────────────────────────────────────────────
+
+function buildGlobalParamsUi() {
+    const container = document.getElementById('global-params');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.className = 'param-row';
+    container.appendChild(row);
+
+    const label = document.createElement('div');
+    label.className = 'param-label';
+    label.textContent = 'max particles per layer';
+    row.appendChild(label);
+
+    const controls = document.createElement('div');
+    controls.className = 'param-controls';
+    row.appendChild(controls);
+
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'param-slider';
+    slider.min = 1;
+    slider.max = 4096;
+    slider.step = 1;
+    slider.value = maxParticlesPerLayer;
+    controls.appendChild(slider);
+
+    const numBox = document.createElement('input');
+    numBox.type = 'number';
+    numBox.className = 'param-number';
+    numBox.value = maxParticlesPerLayer;
+    controls.appendChild(numBox);
+
+    slider.oninput = () => {
+        maxParticlesPerLayer = parseInt(slider.value);
+        numBox.value = slider.value;
+    };
+    numBox.oninput = () => {
+        const v = Math.max(1, Math.min(4096, parseInt(numBox.value) || 1));
+        maxParticlesPerLayer = v;
+        slider.value = v;
+    };
+}
+
 // ── wire up controls ──────────────────────────────────────────────────────────
+
+buildGlobalParamsUi();
 
 const layerSelectEl = document.getElementById('layer-select');
 if (layerSelectEl) {
@@ -720,5 +774,6 @@ export {
     blend_modes,
     setBuiltinTheme,
     addToOnThemeChangedDelegate,
-    getInitializedParams
+    getInitializedParams,
+    getMaxParticlesPerLayer
 }

@@ -9,7 +9,7 @@
   --color-dark: #212529;
   --param-bg: rgba(8, 8, 8, 0.95);
   --param-accent: #dad2c2;
-  --param-text: rgba(255, 255, 255, 0.45);
+  --param-text: rgba(255, 255, 255, 0.72);
   --param-control-bg: rgba(255, 255, 255, 0.06);
   --param-border: rgba(255, 255, 255, 0.12);
 }
@@ -71,6 +71,12 @@ h6 {
 
 .text-faded-link {
   color: rgba(255, 255, 255, .7);
+  text-decoration: underline
+}
+
+.text-faded-link:hover,
+.text-faded-link:focus-visible {
+  color: var(--color-accent);
   text-decoration: underline
 }
 
@@ -226,6 +232,7 @@ header.audiohead h1 {
 .gui-preview {
   max-height: 100%;
   max-width: 100%;
+  height: auto;
   box-shadow: 0 0 16px 8px rgba(0, 0, 0, .8)
 }
 
@@ -235,8 +242,9 @@ header.audiohead h1 {
   text-decoration: underline
 }
 
-.audio-text-link:hover {
-  color: blue
+.audio-text-link:hover,
+.audio-text-link:focus-visible {
+  color: #205bff
 }
 
 .vst {
@@ -724,4 +732,143 @@ header.masthead {
 .layer-controls__btn:disabled {
   opacity: 0.25;
   cursor: not-allowed
+}
+
+/* ── mobile / touch ────────────────────────────────────────── */
+
+/* bottom bar — keep all controls on one line on narrow viewports */
+@media (max-width: 575px) {
+  .bottom-bar {
+    padding: 0 4vw;
+    gap: 0.5rem
+  }
+
+  .text_home_cpy {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 35%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis
+  }
+
+  .ui-head {
+    gap: 0.45rem;
+    flex-shrink: 0
+  }
+
+  .ui-head > span {
+    display: none
+  }
+
+  .ui-head .fa-2x {
+    font-size: 1.4rem
+  }
+
+  .ui-head select {
+    max-width: 9rem
+  }
+
+  /* welcome panel reads at a comfortable size on phones */
+  .welcome-panel__body {
+    font-size: 0.85rem;
+    line-height: 1.7
+  }
+
+  .welcome-panel__header {
+    font-size: 0.9rem
+  }
+
+  /* Spotify embeds — drop from 380px to a less screen-hogging height */
+  .spotify-embed {
+    height: 232px
+  }
+}
+
+/* parameter panel — usable layout on phones */
+@media (max-width: 768px) {
+  #ctrls {
+    top: max(6vh, 50px);
+    height: calc(100vh - max(6vh, 50px) - max(8vh, 50px));
+    right: 0;
+    width: min(90vw, 360px);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6)
+  }
+}
+
+/* bigger touch targets, less hover-dependence */
+@media (pointer: coarse) {
+  .param-slider {
+    height: 6px
+  }
+
+  .param-slider::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px
+  }
+
+  .param-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px
+  }
+
+  .param-number {
+    width: 64px;
+    font-size: 0.8rem;
+    padding: 6px 4px
+  }
+
+  .param-select,
+  #layer-select,
+  .ui-head select {
+    font-size: 0.85rem;
+    padding: 6px 6px
+  }
+
+  .param-checkbox {
+    width: 20px;
+    height: 20px
+  }
+
+  .param-row {
+    margin-bottom: 1rem
+  }
+
+  .param-label {
+    font-size: 0.72rem
+  }
+
+  .layer-controls__btn {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem
+  }
+
+  #saveload {
+    gap: 0.5rem
+  }
+
+  #saveload button {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.7rem
+  }
+
+  .ctrls-toggle {
+    opacity: 0.75
+  }
+
+  .param-reset {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    padding: 4px
+  }
+}
+
+/* keyboard focus parity for icons that previously relied on :hover */
+.ctrls-toggle:focus-visible,
+.layer-controls__btn:focus-visible,
+.param-reset:focus-visible,
+#saveload button:focus-visible {
+  outline: 2px solid var(--param-accent);
+  outline-offset: 2px
 }

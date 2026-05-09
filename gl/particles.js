@@ -77,6 +77,23 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+const reducedMotion = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+if (reducedMotion) {
+  // Render a couple of frames so something is on screen, then freeze the simulation.
+  setTimeout(() => { pause = true; }, 250);
+}
+
+// Pause the simulation when the tab is hidden — saves battery on mobile.
+let _pauseRestoreState = pause;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    _pauseRestoreState = pause;
+    pause = true;
+  } else {
+    pause = _pauseRestoreState;
+  }
+});
+
 class ParticleLayer {
 
   constructor(options) {
@@ -411,7 +428,7 @@ class ParticleAnimation {
     this.randomTimeMax = 10;
     this.randomThemes = false;
     this.loop = true;
-    this.isAnimating = true;
+    this.isAnimating = !reducedMotion;
   }
 
   start() {

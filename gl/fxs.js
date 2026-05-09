@@ -112,10 +112,10 @@ canvas.onmousedown = (e) => {
 canvas.onmouseup = (e) => {
   mouseDown = false;
 };
-canvas.addEventListener("touchstart", handleTouch);
-canvas.addEventListener("touchend", handleTouch);
-canvas.addEventListener("touchcancel", handleTouch);
-canvas.addEventListener("touchmove", handleTouch);
+canvas.addEventListener("touchstart", handleTouch, { passive: true });
+canvas.addEventListener("touchend", handleTouch, { passive: true });
+canvas.addEventListener("touchcancel", handleTouch, { passive: true });
+canvas.addEventListener("touchmove", handleTouch, { passive: true });
 
 const shaders = [];
 

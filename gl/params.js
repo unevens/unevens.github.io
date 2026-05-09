@@ -92,6 +92,60 @@ function sectionTitle(key, getJson) {
     return label;
 }
 
+// ── tooltips ──────────────────────────────────────────────────────────────────
+
+let tooltipEl = null;
+let tooltipShowTimer = null;
+const TOOLTIP_DELAY_MS = 250;
+
+function ensureTooltipEl() {
+    if (tooltipEl) return tooltipEl;
+    tooltipEl = document.createElement('div');
+    tooltipEl.className = 'param-tooltip';
+    tooltipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(tooltipEl);
+    return tooltipEl;
+}
+
+function positionTooltip(anchor) {
+    const el = tooltipEl;
+    el.style.left = '0px';
+    el.style.top = '0px';
+    const a = anchor.getBoundingClientRect();
+    const t = el.getBoundingClientRect();
+    const margin = 8;
+    let left = a.left - t.width - margin;
+    if (left < margin) left = Math.min(a.right + margin, window.innerWidth - t.width - margin);
+    let top = a.top + (a.height - t.height) / 2;
+    top = Math.max(margin, Math.min(top, window.innerHeight - t.height - margin));
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+}
+
+function showTooltipFor(anchor, text) {
+    const el = ensureTooltipEl();
+    el.textContent = text;
+    el.classList.add('param-tooltip--visible');
+    positionTooltip(anchor);
+}
+
+function hideTooltip() {
+    clearTimeout(tooltipShowTimer);
+    tooltipShowTimer = null;
+    if (tooltipEl) tooltipEl.classList.remove('param-tooltip--visible');
+}
+
+function attachTooltip(anchor, text) {
+    if (!text) return;
+    anchor.dataset.tooltip = text;
+    anchor.addEventListener('mouseenter', () => {
+        clearTimeout(tooltipShowTimer);
+        tooltipShowTimer = setTimeout(() => showTooltipFor(anchor, text), TOOLTIP_DELAY_MS);
+    });
+    anchor.addEventListener('mouseleave', hideTooltip);
+    anchor.addEventListener('mousedown', hideTooltip);
+}
+
 // ── parameter classes ─────────────────────────────────────────────────────────
 
 class NumParameter {
@@ -101,10 +155,12 @@ class NumParameter {
         this.value = options.value;
         this.step = options.step || 0.001;
         this.onChanged = options.onChanged || null;
+        this.description = options.description || '';
     }
 
     addToUi(getJson, key, paramDiv) {
         paramDiv.className = 'param-row';
+        if (this.description) attachTooltip(paramDiv, this.description);
 
         const label = document.createElement('div');
         label.className = 'param-label';
@@ -168,10 +224,12 @@ class StringParameter {
         this.index = options.index;
         this.forceRefresh = options.forceRefresh || false;
         this.onChanged = options.onChanged || null;
+        this.description = options.description || '';
     }
 
     addToUi(getJson, key, paramDiv) {
         paramDiv.className = 'param-row';
+        if (this.description) attachTooltip(paramDiv, this.description);
 
         const label = document.createElement('div');
         label.className = 'param-label';
@@ -225,183 +283,256 @@ class StringParameter {
 
 // ── parameter definitions ─────────────────────────────────────────────────────
 
+const descriptions = {
+    simulation: "Which physics drives the particles in this layer.",
+    particle: "Visual shape used to draw each particle.",
+    alignment: "Particle orientation: 'standard' is fixed, 'velocity' rotates each particle to face its movement direction.",
+    blend_mode: "How overlapping particles compose: alpha_mask is opaque, alpha_blend is standard transparency, additive accumulates light (good for glow).",
+    interaction: "Source of the interaction point: follow_mouse tracks the cursor live, on_click only updates while pressed, random_walk drifts on its own.",
+    randomWalkSpeed: "Speed at which the interaction point drifts when 'random_walk' is selected.",
+    numParticles: "Number of particles in this layer (capped by max particles per layer).",
+    particleHeight: "Vertical size of each particle, as a fraction of the screen height.",
+    particleAspectRatio: "Particle width-to-height ratio (1 = square).",
+    sideThreshold: "Distance from screen center where the border policy kicks in. Smaller values confine particles to a smaller central area.",
+    interactionStartX: "Initial horizontal position of the interaction point at startup, in normalized [0..1] coordinates.",
+    interactionStartY: "Initial vertical position of the interaction point at startup, in normalized [0..1] coordinates.",
+    timeDialation: "Simulation speed multiplier: 0 pauses, 1 is real-time, higher accelerates time.",
+    borderPolicy: "What happens when particles cross the side threshold: 'wrap' teleports them to the opposite edge, 'bounce' reflects them.",
+    // forces
+    attractToTwin: "Strength and sign of the force pulling each particle toward its randomly paired twin. Negative values repel.",
+    attractToTwinPower: "Falloff exponent of the twin force with distance — higher values make the force more localised.",
+    attractTwinByVelocity: "Modulates the twin force by the twin's velocity, blending steady and chaotic dynamics.",
+    attractToTouch: "Strength and sign of the force pulling particles toward the interaction point. Negative values repel.",
+    attractToTouchPower: "Falloff exponent of the interaction force with distance — higher values make the force more localised.",
+    twinChangePeriod: "How often (in seconds) each particle is re-paired with a new random twin.",
+    maxForce: "Hard cap on per-frame acceleration magnitude — prevents runaway speeds.",
+    dragCoef: "Velocity-squared drag — slows fast-moving particles.",
+    noizForce: "Amount of random per-frame noise injected into particle motion.",
+    pulseCoef: "Strength of an oscillating pulse force applied along each particle's id-based direction.",
+    pulseFreq: "Frequency of the pulse oscillation.",
+    sideForce: "Inward push applied at the side threshold (bounce mode only).",
+    hardSide: "Bounce hardness: 0 is a soft cushion, 1 is a fully rigid wall.",
+    touchObstacleRadius: "If non-zero, the interaction point becomes a circular obstacle of this radius that particles cannot enter.",
+    touchObstacleRepulsion: "How strongly particles are flung outward when escaping the obstacle.",
+    // mouse spawner
+    burstPercentage: "Average fraction of the particle pool that should be alive at once (1 keeps every slot active).",
+    burstInterval: "Time between successive emission bursts.",
+    lifetimeMin: "Minimum particle lifetime — each spawn picks a random duration in [min, max].",
+    lifetimeMax: "Maximum particle lifetime — each spawn picks a random duration in [min, max].",
+    spawnSpeedMin: "Minimum initial speed for newly spawned particles.",
+    spawnSpeedMax: "Maximum initial speed for newly spawned particles.",
+    // coloring
+    hueVariation: "Per-particle random hue spread around the base tint.",
+    hueSpeed: "Speed at which the global hue oscillates over time.",
+    tint: "Base hue [0..1] (HSV color wheel position).",
+    tintVariation: "Range over which the base hue oscillates over time.",
+    saturation: "Average color saturation.",
+    saturationVariation: "Per-particle random saturation spread.",
+    lightness: "Average color lightness.",
+    lightnessVariation: "Per-particle random lightness spread.",
+    thickness: "Outline thickness of the particle's SDF shape.",
+    falloff: "Softness of the outline edge: 0 is hard, 1 is fully feathered.",
+    blinkSpeedMin: "Minimum per-particle blink speed.",
+    blinkSpeedMax: "Maximum per-particle blink speed.",
+    radiusPulseFreq: "Frequency of the per-particle radius pulsation.",
+    radiusPulsePercentage: "How small the radius gets at the bottom of the pulse: 0 collapses to a point, 1 disables the pulse.",
+    // droplet
+    radius_1: "Radius of the larger circle of the droplet (uneven capsule shape).",
+    radius_2: "Radius of the smaller circle of the droplet.",
+    height: "Distance between the two droplet centers (length of the body).",
+    // tex particle
+    texSaturation: "Texture color saturation: 0 grayscales the texture, 1 keeps original colors.",
+    tintAmount: "Mix between the original texture color (0) and the per-particle generated tint (1).",
+    brightness: "Multiplier on the texture output brightness.",
+    // bloom
+    numPasses: "Number of separable blur passes — more passes produce a wider, softer glow.",
+    amount: "How much bloom is mixed into the final image.",
+    radius: "Blur radius (in pixels) of each pass.",
+    strength: "Number of taps per blur pass — affects quality and softness of the blur kernel.",
+};
+
+// Per-particle 'threshold' is an alpha discard cutoff; bloom 'threshold' is a brightness cutoff.
+// Disambiguate by passing distinct strings explicitly where relevant.
+const ALPHA_CUTOFF_DESC = "Alpha cutoff — pixels below this are discarded entirely.";
+const BLOOM_THRESHOLD_DESC = "Brightness cutoff — only pixels above this contribute to the bloom.";
+
 const paramInitializer = {
 
-    simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true }),
-    particle: new StringParameter({ values: particles, index: 0, forceRefresh: true }),
-    alignment: new StringParameter({ values: ["standard", "velocity"], index: 0 }),
-    blend_mode: new StringParameter({ values: blend_modes, index: 0 }),
-    interaction: new StringParameter({ values: interactions, index: 0 }),
-    randomWalkSpeed: new NumParameter({ min: 0, max: .1, value: 0, step: 0.000001 }),
-    numParticles: new NumParameter({ min: 1, max: 4096, value: 4096, step: 1 }),
-    particleHeight: new NumParameter({ min: .01, max: .2, value: 0.05, step: 0.001 }),
-    particleAspectRatio: new NumParameter({ min: .1, max: 10, value: 1 }),
-    sideThreshold: new NumParameter({ min: .1, max: 10, value: 1 }),
-    interactionStartX: new NumParameter({ min: 0, max: 1, value: .5 }),
-    interactionStartY: new NumParameter({ min: 0, max: 1, value: 0 }),
-    timeDialation: new NumParameter({ min: 0, max: 100, value: 1, onChanged: (value) => { fxs.setTimeDialationCoef(value); } }),
-    borderPolicy: new StringParameter({ values: ["wrap", "bounce"], index: 0 }),
+    simulation: new StringParameter({ values: simulations, index: 0, forceRefresh: true, description: descriptions.simulation }),
+    particle: new StringParameter({ values: particles, index: 0, forceRefresh: true, description: descriptions.particle }),
+    alignment: new StringParameter({ values: ["standard", "velocity"], index: 0, description: descriptions.alignment }),
+    blend_mode: new StringParameter({ values: blend_modes, index: 0, description: descriptions.blend_mode }),
+    interaction: new StringParameter({ values: interactions, index: 0, description: descriptions.interaction }),
+    randomWalkSpeed: new NumParameter({ min: 0, max: .1, value: 0, step: 0.000001, description: descriptions.randomWalkSpeed }),
+    numParticles: new NumParameter({ min: 1, max: 4096, value: 4096, step: 1, description: descriptions.numParticles }),
+    particleHeight: new NumParameter({ min: .01, max: .2, value: 0.05, step: 0.001, description: descriptions.particleHeight }),
+    particleAspectRatio: new NumParameter({ min: .1, max: 10, value: 1, description: descriptions.particleAspectRatio }),
+    sideThreshold: new NumParameter({ min: .1, max: 10, value: 1, description: descriptions.sideThreshold }),
+    interactionStartX: new NumParameter({ min: 0, max: 1, value: .5, description: descriptions.interactionStartX }),
+    interactionStartY: new NumParameter({ min: 0, max: 1, value: 0, description: descriptions.interactionStartY }),
+    timeDialation: new NumParameter({ min: 0, max: 100, value: 1, onChanged: (value) => { fxs.setTimeDialationCoef(value); }, description: descriptions.timeDialation }),
+    borderPolicy: new StringParameter({ values: ["wrap", "bounce"], index: 0, description: descriptions.borderPolicy }),
 
     twin_attractor: {
-        attractToTwin: new NumParameter({ min: -1, max: 1, value: -0.005 }),
-        attractToTwinPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
-        attractTwinByVelocity: new NumParameter({ min: 0.0, max: 1, value: 0.0 }),
-        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.0 }),
-        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
-        twinChangePeriod: new NumParameter({ min: 0, max: 100, value: 4.0 }),
-        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
-        dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
-        noizForce: new NumParameter({ min: .0, max: 4, value: .8 }),
-        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1 }),
-        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
-        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
-        hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
-        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
-        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 200.0, value: 80.0 }),
+        attractToTwin: new NumParameter({ min: -1, max: 1, value: -0.005, description: descriptions.attractToTwin }),
+        attractToTwinPower: new NumParameter({ min: .2, max: 16, value: 4.0, description: descriptions.attractToTwinPower }),
+        attractTwinByVelocity: new NumParameter({ min: 0.0, max: 1, value: 0.0, description: descriptions.attractTwinByVelocity }),
+        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.0, description: descriptions.attractToTouch }),
+        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0, description: descriptions.attractToTouchPower }),
+        twinChangePeriod: new NumParameter({ min: 0, max: 100, value: 4.0, description: descriptions.twinChangePeriod }),
+        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25, description: descriptions.maxForce }),
+        dragCoef: new NumParameter({ min: .0, max: 4, value: 1, description: descriptions.dragCoef }),
+        noizForce: new NumParameter({ min: .0, max: 4, value: .8, description: descriptions.noizForce }),
+        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1, description: descriptions.pulseCoef }),
+        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1, description: descriptions.pulseFreq }),
+        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5, description: descriptions.sideForce }),
+        hardSide: new NumParameter({ min: .001, max: 4, value: .05, description: descriptions.hardSide }),
+        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0, description: descriptions.touchObstacleRadius }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 200.0, value: 80.0, description: descriptions.touchObstacleRepulsion }),
     },
     single_attractor: {
-        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.005 }),
-        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
-        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
-        dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
-        noizForce: new NumParameter({ min: .0, max: 4, value: .8 }),
-        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1 }),
-        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
-        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
-        hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
-        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
-        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
+        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.005, description: descriptions.attractToTouch }),
+        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0, description: descriptions.attractToTouchPower }),
+        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25, description: descriptions.maxForce }),
+        dragCoef: new NumParameter({ min: .0, max: 4, value: 1, description: descriptions.dragCoef }),
+        noizForce: new NumParameter({ min: .0, max: 4, value: .8, description: descriptions.noizForce }),
+        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1, description: descriptions.pulseCoef }),
+        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1, description: descriptions.pulseFreq }),
+        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5, description: descriptions.sideForce }),
+        hardSide: new NumParameter({ min: .001, max: 4, value: .05, description: descriptions.hardSide }),
+        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0, description: descriptions.touchObstacleRadius }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0, description: descriptions.touchObstacleRepulsion }),
     },
     mouse_spawner: {
-        burstPercentage: new NumParameter({ min: 0.0, max: 1.0, value: 1.0 }),
-        burstInterval: new NumParameter({ min: 0.005, max: 5, value: 0.05 }),
-        lifetimeMin: new NumParameter({ min: 0.05, max: 30, value: 1.0 }),
-        lifetimeMax: new NumParameter({ min: 0.05, max: 30, value: 3.0 }),
-        spawnSpeedMin: new NumParameter({ min: 0.0, max: 4, value: 0.1 }),
-        spawnSpeedMax: new NumParameter({ min: 0.0, max: 4, value: 0.4 }),
-        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.0 }),
-        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
-        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
-        dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
-        noizForce: new NumParameter({ min: .0, max: 4, value: .8 }),
-        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1 }),
-        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
-        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
-        hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
-        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
-        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
+        burstPercentage: new NumParameter({ min: 0.0, max: 1.0, value: 1.0, description: descriptions.burstPercentage }),
+        burstInterval: new NumParameter({ min: 0.005, max: 5, value: 0.05, description: descriptions.burstInterval }),
+        lifetimeMin: new NumParameter({ min: 0.05, max: 30, value: 1.0, description: descriptions.lifetimeMin }),
+        lifetimeMax: new NumParameter({ min: 0.05, max: 30, value: 3.0, description: descriptions.lifetimeMax }),
+        spawnSpeedMin: new NumParameter({ min: 0.0, max: 4, value: 0.1, description: descriptions.spawnSpeedMin }),
+        spawnSpeedMax: new NumParameter({ min: 0.0, max: 4, value: 0.4, description: descriptions.spawnSpeedMax }),
+        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.0, description: descriptions.attractToTouch }),
+        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0, description: descriptions.attractToTouchPower }),
+        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25, description: descriptions.maxForce }),
+        dragCoef: new NumParameter({ min: .0, max: 4, value: 1, description: descriptions.dragCoef }),
+        noizForce: new NumParameter({ min: .0, max: 4, value: .8, description: descriptions.noizForce }),
+        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1, description: descriptions.pulseCoef }),
+        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1, description: descriptions.pulseFreq }),
+        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5, description: descriptions.sideForce }),
+        hardSide: new NumParameter({ min: .001, max: 4, value: .05, description: descriptions.hardSide }),
+        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0, description: descriptions.touchObstacleRadius }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0, description: descriptions.touchObstacleRepulsion }),
     },
 
     sticky_starlight: {
-        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
-        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
-        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
-        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
-        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
-        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
-        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
-        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
-        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
-        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
-        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
-        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025, description: descriptions.hueVariation }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05, description: descriptions.hueSpeed }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0, description: descriptions.tint }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0, description: descriptions.tintVariation }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45, description: descriptions.saturation }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25, description: descriptions.saturationVariation }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0, description: descriptions.lightness }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0, description: descriptions.lightnessVariation }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1, description: descriptions.thickness }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5, description: descriptions.falloff }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1, description: ALPHA_CUTOFF_DESC }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4, description: descriptions.blinkSpeedMin }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10, description: descriptions.blinkSpeedMax }),
     },
 
     droplet: {
-        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
-        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
-        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
-        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
-        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
-        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
-        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
-        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
-        thickness: new NumParameter({ min: 0, max: 1, value: .122 }),
-        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
-        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
-        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
-        radius_1: new NumParameter({ min: 0.001, max: 1, value: .333 }),
-        radius_2: new NumParameter({ min: 0.001, max: 1, value: .133 }),
-        height: new NumParameter({ min: 0.01, max: 1, value: .85 }),
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025, description: descriptions.hueVariation }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05, description: descriptions.hueSpeed }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0, description: descriptions.tint }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0, description: descriptions.tintVariation }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45, description: descriptions.saturation }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25, description: descriptions.saturationVariation }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0, description: descriptions.lightness }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0, description: descriptions.lightnessVariation }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .122, description: descriptions.thickness }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5, description: descriptions.falloff }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1, description: ALPHA_CUTOFF_DESC }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4, description: descriptions.blinkSpeedMin }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10, description: descriptions.blinkSpeedMax }),
+        radius_1: new NumParameter({ min: 0.001, max: 1, value: .333, description: descriptions.radius_1 }),
+        radius_2: new NumParameter({ min: 0.001, max: 1, value: .133, description: descriptions.radius_2 }),
+        height: new NumParameter({ min: 0.01, max: 1, value: .85, description: descriptions.height }),
     },
 
     circle: {
-        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
-        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
-        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
-        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
-        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
-        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
-        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
-        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
-        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
-        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
-        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
-        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
-        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
-        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025, description: descriptions.hueVariation }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05, description: descriptions.hueSpeed }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0, description: descriptions.tint }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0, description: descriptions.tintVariation }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45, description: descriptions.saturation }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25, description: descriptions.saturationVariation }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0, description: descriptions.lightness }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0, description: descriptions.lightnessVariation }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1, description: descriptions.thickness }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5, description: descriptions.falloff }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1, description: ALPHA_CUTOFF_DESC }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4, description: descriptions.blinkSpeedMin }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10, description: descriptions.blinkSpeedMax }),
+        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2, description: descriptions.radiusPulseFreq }),
+        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3, description: descriptions.radiusPulsePercentage }),
     },
 
     square: {
-        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
-        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
-        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
-        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
-        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
-        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
-        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
-        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
-        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
-        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
-        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
-        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
-        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
-        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025, description: descriptions.hueVariation }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05, description: descriptions.hueSpeed }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0, description: descriptions.tint }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0, description: descriptions.tintVariation }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45, description: descriptions.saturation }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25, description: descriptions.saturationVariation }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0, description: descriptions.lightness }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0, description: descriptions.lightnessVariation }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1, description: descriptions.thickness }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5, description: descriptions.falloff }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1, description: ALPHA_CUTOFF_DESC }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4, description: descriptions.blinkSpeedMin }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10, description: descriptions.blinkSpeedMax }),
+        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2, description: descriptions.radiusPulseFreq }),
+        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3, description: descriptions.radiusPulsePercentage }),
     },
 
     circle_and_square: {
-        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025 }),
-        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05 }),
-        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
-        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
-        saturation: new NumParameter({ min: 0, max: 1, value: .45 }),
-        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25 }),
-        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0 }),
-        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0 }),
-        thickness: new NumParameter({ min: 0, max: 1, value: .1 }),
-        falloff: new NumParameter({ min: 0, max: 1, value: .5 }),
-        threshold: new NumParameter({ min: 0, max: 20, value: 1 }),
-        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
-        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
-        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2 }),
-        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3 }),
+        hueVariation: new NumParameter({ min: .0, max: 1, value: 0.025, description: descriptions.hueVariation }),
+        hueSpeed: new NumParameter({ min: .0, max: 1, value: 0.05, description: descriptions.hueSpeed }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0, description: descriptions.tint }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0, description: descriptions.tintVariation }),
+        saturation: new NumParameter({ min: 0, max: 1, value: .45, description: descriptions.saturation }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: .25, description: descriptions.saturationVariation }),
+        lightness: new NumParameter({ min: 0, max: 1, value: 1.33 / 2.0, description: descriptions.lightness }),
+        lightnessVariation: new NumParameter({ min: 0, max: 1, value: (1. - .33) / 2.0, description: descriptions.lightnessVariation }),
+        thickness: new NumParameter({ min: 0, max: 1, value: .1, description: descriptions.thickness }),
+        falloff: new NumParameter({ min: 0, max: 1, value: .5, description: descriptions.falloff }),
+        threshold: new NumParameter({ min: 0, max: 20, value: 1, description: ALPHA_CUTOFF_DESC }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4, description: descriptions.blinkSpeedMin }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10, description: descriptions.blinkSpeedMax }),
+        radiusPulseFreq: new NumParameter({ min: 0, max: 10, value: .2, description: descriptions.radiusPulseFreq }),
+        radiusPulsePercentage: new NumParameter({ min: 0.001, max: 1, value: .3, description: descriptions.radiusPulsePercentage }),
     },
 
     bloom: {
-        numPasses: new NumParameter({ min: 0, max: 16, value: 4, step: 1 }),
-        amount: new NumParameter({ min: 0., max: 8, value: 1.8 }),
-        threshold: new NumParameter({ min: 0., max: 1, value: 0.7 }),
-        radius: new NumParameter({ min: 0., max: 4, value: 4 }),
-        strength: new NumParameter({ min: .1, max: 50, value: 20 }),
+        numPasses: new NumParameter({ min: 0, max: 16, value: 4, step: 1, description: descriptions.numPasses }),
+        amount: new NumParameter({ min: 0., max: 8, value: 1.8, description: descriptions.amount }),
+        threshold: new NumParameter({ min: 0., max: 1, value: 0.7, description: BLOOM_THRESHOLD_DESC }),
+        radius: new NumParameter({ min: 0., max: 4, value: 4, description: descriptions.radius }),
+        strength: new NumParameter({ min: .1, max: 50, value: 20, description: descriptions.strength }),
     },
 
     ...Object.fromEntries(texParticleConfigs.map(cfg => [`tex_${cfg.name}`, {
-        hueVariation: new NumParameter({ min: 0, max: 1, value: 0.025 }),
-        hueSpeed: new NumParameter({ min: 0, max: 1, value: 0.05 }),
-        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0 }),
-        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0 }),
-        saturation: new NumParameter({ min: 0, max: 1, value: 0.45 }),
-        saturationVariation: new NumParameter({ min: 0, max: 1, value: 0.25 }),
-        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4 }),
-        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10 }),
-        texSaturation: new NumParameter({ min: 0, max: 1, value: 1 }),
-        tintAmount: new NumParameter({ min: 0, max: 1, value: 0 }),
-        brightness: new NumParameter({ min: 0, max: 5, value: 1 }),
-        threshold: new NumParameter({ min: 0, max: 1, value: 0.05, step: 0.001 }),
+        hueVariation: new NumParameter({ min: 0, max: 1, value: 0.025, description: descriptions.hueVariation }),
+        hueSpeed: new NumParameter({ min: 0, max: 1, value: 0.05, description: descriptions.hueSpeed }),
+        tint: new NumParameter({ min: 0, max: 1, value: 3.0 / 6.0, description: descriptions.tint }),
+        tintVariation: new NumParameter({ min: 0, max: 1, value: 2.0 / 6.0, description: descriptions.tintVariation }),
+        saturation: new NumParameter({ min: 0, max: 1, value: 0.45, description: descriptions.saturation }),
+        saturationVariation: new NumParameter({ min: 0, max: 1, value: 0.25, description: descriptions.saturationVariation }),
+        blinkSpeedMin: new NumParameter({ min: 0.1, max: 30, value: 4, description: descriptions.blinkSpeedMin }),
+        blinkSpeedMax: new NumParameter({ min: 0.1, max: 30, value: 10, description: descriptions.blinkSpeedMax }),
+        texSaturation: new NumParameter({ min: 0, max: 1, value: 1, description: descriptions.texSaturation }),
+        tintAmount: new NumParameter({ min: 0, max: 1, value: 0, description: descriptions.tintAmount }),
+        brightness: new NumParameter({ min: 0, max: 5, value: 1, description: descriptions.brightness }),
+        threshold: new NumParameter({ min: 0, max: 1, value: 0.05, step: 0.001, description: ALPHA_CUTOFF_DESC }),
     }])),
 };
 
@@ -711,6 +842,7 @@ function buildGlobalParamsUi() {
 
     const row = document.createElement('div');
     row.className = 'param-row';
+    attachTooltip(row, "Hard cap on the per-layer particle pool size — limits how many particles each layer can ever simulate at once. Reduce on slower devices.");
     container.appendChild(row);
 
     const label = document.createElement('div');

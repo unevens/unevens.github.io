@@ -557,6 +557,38 @@ header.masthead {
   accent-color: var(--param-accent)
 }
 
+/* tooltip */
+.param-tooltip {
+  position: fixed;
+  z-index: 1000;
+  max-width: 240px;
+  padding: 0.45rem 0.6rem;
+  background: rgba(8, 8, 8, 0.97);
+  border: 1px solid rgba(218, 210, 194, 0.32);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: monospace;
+  font-size: 0.65rem;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  border-radius: 2px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s ease;
+  left: 0;
+  top: 0
+}
+
+.param-tooltip--visible {
+  opacity: 1;
+  visibility: visible
+}
+
+.param-row[data-tooltip] .param-label {
+  cursor: help
+}
+
 /* reset button */
 .param-reset {
   background: none;

@@ -80,6 +80,18 @@ function setMousePosition(x, y) {
   mouse[1] = mouse[3] = y;
 }
 
+// Dispatch a real mousedown+mouseup pair at the given normalized coords (x,y in [0,1],
+// y=1 at top per the mouse buffer convention). Goes through the canvas's real handlers
+// so any browser-level side effects (focus, paint, rAF wake, hit-testing) fire too.
+function simulateClick(x, y) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = rect.x + x * rect.width;
+  const clientY = rect.y + (1.0 - y) * rect.height;
+  const opts = { bubbles: true, cancelable: true, clientX, clientY, button: 0 };
+  canvas.dispatchEvent(new MouseEvent("mousedown", opts));
+  canvas.dispatchEvent(new MouseEvent("mouseup", opts));
+}
+
 function handleMouseMove(event) {
   if (updateMouseOnlyOnClick && !mouseDown) {
     return;
@@ -657,6 +669,7 @@ export {
   setUpdateMouseOnlyOnClick,
   isMouseDown,
   setMousePosition,
+  simulateClick,
   texImage2D,
   setTimeDialationCoef
 };

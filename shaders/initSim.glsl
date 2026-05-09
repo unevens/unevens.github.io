@@ -8,6 +8,7 @@ layout(location = 0) out vec4 outputPacked;
 uniform vec2 cellRadius;
 uniform vec2 noizAmount;
 uniform vec2 noizSeed;
+uniform vec2 baseOffset;
 
 highp float random(vec2 co) {
     highp float a = 12.9898;
@@ -24,7 +25,7 @@ vec4 noiz(vec2 uv) {
 
 void main() {
     vec4 noiz = 2.0 * noiz(v_uv) - 1.0;
-    vec2 position = v_uv + noizAmount.x * noiz.xy * cellRadius;
+    vec2 position = v_uv + baseOffset + noizAmount.x * noiz.xy * cellRadius;
     vec2 velocity = noizAmount.y * noiz.zw * cellRadius;
     outputPacked = vec4(position, velocity);
     // outputPacked = vec4(v_uv, 0.2,0.);

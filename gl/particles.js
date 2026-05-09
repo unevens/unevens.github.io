@@ -125,6 +125,8 @@ class ParticleLayer {
     this.ratioXonY = Float32Array.from([1, 1]);
     this.ratioYonX = Float32Array.from([1, 1]);
     this.sideThresh = Float32Array.from([1, 1]);
+    this.spawnEpoch = 0;
+    this.spawnEpochPending = true;
   }
 
   numParticles() { return Math.min(this.params.numParticles, getMaxParticlesPerLayer(), settings.simSize[0] * settings.simSize[1]); }
@@ -176,13 +178,23 @@ class ParticleLayer {
     this.checkUpdateSimulationSize();
     this.simBuffers[0].bind();
     initSimProgram.bind();
+    // Emitter-style sims should not start in a visible grid: park particles off-screen
+    // until the simulation's spawn logic places them.
+    const isEmitter = this.params.simulation === "mouse_spawner";
     initSimProgram.setUniforms({
       cellRadius: [0.5 / settings.simSize[0], 0.5 / settings.simSize[1]],
       noizAmount: [0.3, 0.01],
       noizSeed: [Math.sin(performance.now()), Math.cos(performance.now())],
+      baseOffset: isEmitter ? [2.0, 2.0] : [0.0, 0.0],
     });
     fxs.quadVAO.draw();
     fxs.setMousePosition(this.params.interactionStartX, this.params.interactionStartY);
+    this.spawnEpochPending = true;
+    // A minor delay before the synthetic click lets the fresh sim state settle
+    // (init draw + first onNewFrame) before the click side-effects fire.
+    setTimeout(() => {
+      fxs.simulateClick(this.params.interactionStartX, this.params.interactionStartY);
+    }, 1000);
   }
 
   setParams(params) {
@@ -254,6 +266,10 @@ class ParticleLayer {
     gl.disable(gl.BLEND);
     gl.disable(gl.DEPTH_TEST);
     this.checkUpdateSimulationSize();
+    if (this.spawnEpochPending) {
+      this.spawnEpoch = time;
+      this.spawnEpochPending = false;
+    }
     this.simBuffers[1].bind();
     this.simulationProgram.bind();
     this.simulationProgram.setUniforms({
@@ -262,6 +278,7 @@ class ParticleLayer {
       attractor: this.interactionPoint,
       dt: deltaTime,
       time,
+      spawnEpoch: this.spawnEpoch,
       sideThresh: this.sideThresh,
       numParticles: this.numParticles()
     });

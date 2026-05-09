@@ -1,6 +1,6 @@
 import * as fxs from "./fxs.js";
-const themeNames = ["neon_hole", "holy", "virtual_flux", "index"];
-const simulations = ["single_attractor", "twin_attractor"];
+const themeNames = ["neon_hole", "holy", "virtual_flux", "index", "fountain"];
+const simulations = ["single_attractor", "twin_attractor", "mouse_spawner"];
 const texParticleConfigs = [
     { name: "leaves_atlas_02_512_2x2", cols: 2, rows: 2 },
     { name: "seeds_atlas_512_5x2", cols: 5, rows: 2 },
@@ -261,6 +261,25 @@ const paramInitializer = {
     },
     single_attractor: {
         attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.005 }),
+        attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
+        maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
+        dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
+        noizForce: new NumParameter({ min: .0, max: 4, value: .8 }),
+        pulseCoef: new NumParameter({ min: .001, max: 4, value: .1 }),
+        pulseFreq: new NumParameter({ min: .001, max: 4, value: .1 }),
+        sideForce: new NumParameter({ min: .01, max: 4, value: 1.5 }),
+        hardSide: new NumParameter({ min: .001, max: 4, value: .05 }),
+        touchObstacleRadius: new NumParameter({ min: 0.0, max: 1.0, value: 0.0 }),
+        touchObstacleRepulsion: new NumParameter({ min: 0.0, max: 50.0, value: 10.0 }),
+    },
+    mouse_spawner: {
+        burstPercentage: new NumParameter({ min: 0.0, max: 1.0, value: 1.0 }),
+        burstInterval: new NumParameter({ min: 0.005, max: 5, value: 0.05 }),
+        lifetimeMin: new NumParameter({ min: 0.05, max: 30, value: 1.0 }),
+        lifetimeMax: new NumParameter({ min: 0.05, max: 30, value: 3.0 }),
+        spawnSpeedMin: new NumParameter({ min: 0.0, max: 4, value: 0.1 }),
+        spawnSpeedMax: new NumParameter({ min: 0.0, max: 4, value: 0.4 }),
+        attractToTouch: new NumParameter({ min: -.1, max: .1, value: 0.0 }),
         attractToTouchPower: new NumParameter({ min: .2, max: 16, value: 4.0 }),
         maxForce: new NumParameter({ min: .05, max: 1, value: 0.25 }),
         dragCoef: new NumParameter({ min: .0, max: 4, value: 1 }),
